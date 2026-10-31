@@ -67,7 +67,8 @@
                             class="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span><span
                             class="relative inline-flex rounded-full h-2 w-2 bg-secondary"></span></span><span
                         class="font-label-md text-label-md text-primary font-bold tracking-wider">Gemini 2.5 Argon
-                        Live</span></div>
+                        Live</span>
+                </div>
             </div>
             <div class="hidden lg:flex items-center gap-space-sm shrink-0">
                 <div
@@ -79,12 +80,14 @@
                     class="flex items-center gap-space-xs px-space-sm py-1 rounded-full bg-surface-container-low border border-white/[0.05]">
                     <span class="material-symbols-outlined text-[14px] text-tertiary">bolt</span><span
                         class="font-telemetry-data text-telemetry-data text-on-surface">38ms <span
-                            class="text-on-surface-variant text-label-sm">round-trip</span></span></div>
+                            class="text-on-surface-variant text-label-sm">round-trip</span></span>
+                </div>
                 <div
                     class="flex items-center gap-space-xs px-space-sm py-1 rounded-full bg-surface-container-low border border-white/[0.05]">
                     <span class="material-symbols-outlined text-[14px] text-primary">graphic_eq</span><span
                         class="font-telemetry-data text-telemetry-data text-on-surface">24kHz <span
-                            class="text-on-surface-variant text-label-sm">Opus Direct</span></span></div>
+                            class="text-on-surface-variant text-label-sm">Opus Direct</span></span>
+                </div>
             </div>
             <div class="flex items-center gap-space-sm shrink-0"><button
                     class="flex items-center gap-space-xs px-space-sm py-1.5 rounded-full bg-surface-container-high hover:bg-surface-variant hover:text-on-surface text-on-surface-variant transition-colors border border-white/[0.08]"
@@ -129,7 +132,8 @@
                     class="flex items-center gap-space-sm px-space-md py-2.5 rounded-full text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all"
                     data-path="audio-io-matrix" href="#"><span
                         class="material-symbols-outlined text-[20px]">hub</span><span
-                        class="font-headline-sm text-body-md font-medium">Audio I/O Matrix</span></a></nav>
+                        class="font-headline-sm text-body-md font-medium">Audio I/O Matrix</span></a>
+            </nav>
         </div>
         <div class="px-space-sm flex flex-col gap-space-sm">
             <div class="p-space-sm rounded-lg bg-surface-container-low border border-white/[0.04]">
@@ -999,6 +1003,95 @@
             </script>
         </main>
     </div>
+    <script>
+        let ws = null;
+        let audioContext = null;
+        let mediaStream = null;
+
+        async function startGeminiLiveSession() {
+            // Retrieve API Key or prompt user
+            const apiKey = localStorage.getItem('gemini_api_key') || prompt("Enter your Gemini API Key:");
+            if (!apiKey) return alert("API Key is required to begin session.");
+            localStorage.setItem('gemini_api_key', apiKey);
+
+            // 1. Establish Stateful WebSocket Connection
+            const url = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=${apiKey}`;
+            ws = new WebSocket(url);
+
+            ws.onopen = async () => {
+                console.log("Connected to Gemini Live API");
+
+                // 2. Send BidiGenerateContentSetup message for Argon model
+                const setupMsg = {
+                    setup: {
+                        model: "models/gemini-4-argon",
+                        generationConfig: {
+                            responseModalities: ["AUDIO", "TEXT"],
+                            speechConfig: {
+                                voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } }
+                            }
+                        },
+                        systemInstruction: {
+                            parts: [{
+                                text: "You are a real-time translator. Continuously listen to English audio and translate it into clear Japanese. Provide both text transcription and synthesized speech."
+                            }]
+                        }
+                    }
+                };
+                ws.send(JSON.stringify(setupMsg));
+
+                // 3. Capture 16kHz PCM Audio Stream from Microphone
+                audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+                mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const source = audioContext.createMediaStreamSource(mediaStream);
+                const processor = audioContext.createScriptProcessor(4096, 1, 1);
+
+                processor.onaudioprocess = (e) => {
+                    if (ws.readyState !== WebSocket.OPEN) return;
+                    const inputData = e.inputBuffer.getChannelData(0);
+
+                    // Convert Float32Array to 16-bit PCM Base64 string
+                    const pcm16 = new Int16Array(inputData.length);
+                    for (let i = 0; i < inputData.length; i++) {
+                        pcm16[i] = Math.max(-1, Math.min(1, inputData[i])) * 0x7FFF;
+                    }
+                    const base64Audio = btoa(String.fromCharCode(...new Uint8Array(pcm16.buffer)));
+
+                    ws.send(JSON.stringify({
+                        realtimeInput: {
+                            mediaChunks: [{ mimeType: "audio/pcm", data: base64Audio }]
+                        }
+                    }));
+                };
+
+                source.connect(processor);
+                processor.connect(audioContext.destination);
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+
+                // Parse incoming text tokens from Gemini response
+                if (data.serverContent?.modelTurn?.parts) {
+                    data.serverContent.modelTurn.parts.forEach(part => {
+                        if (part.text) {
+                            console.log("Translation Output:", part.text);
+                            // Render incoming text to your center column transcript container
+                        }
+                    });
+                }
+            };
+
+            ws.onerror = (err) => console.error("WebSocket Error:", err);
+            ws.onclose = () => console.log("Gemini Session Closed");
+        }
+
+        // Bind function to your Start Session button
+        document.addEventListener("DOMContentLoaded", () => {
+            const startBtn = document.querySelector("#startSessionBtn") || document.querySelector("button");
+            if (startBtn) startBtn.addEventListener("click", startGeminiLiveSession);
+        });
+    </script>
 </body>
 
 </html>
