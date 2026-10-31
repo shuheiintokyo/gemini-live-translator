@@ -11,20 +11,19 @@ export function isSessionActive() {
 }
 
 function buildSetupMessage(model, sourceLang, targetLang, targetTone) {
-    // The Live Translate model takes no system instruction, and it nests the
-    // transcription settings under generationConfig instead of the setup root
+    // The Live Translate model takes no system instruction or voice
     if (getLiveModel(model).isTranslateModel) {
         return {
             setup: {
                 model,
                 generationConfig: {
                     responseModalities: ["AUDIO"],
-                    inputAudioTranscription: {},
-                    outputAudioTranscription: {},
                     translationConfig: {
                         targetLanguageCode: getTranslationLanguageCode(targetLang)
                     }
-                }
+                },
+                inputAudioTranscription: {},
+                outputAudioTranscription: {}
             }
         };
     }
