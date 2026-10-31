@@ -197,7 +197,7 @@
             <!-- Quick Global Controls -->
             <div class="flex items-center gap-space-sm shrink-0">
                 <!-- Recording Toggle Button -->
-                <button id="rec-toggle-btn" class="flex items-center gap-space-xs px-space-sm py-1.5 rounded-full bg-surface-container-high hover:bg-surface-variant hover:text-on-surface text-on-surface-variant transition-colors border border-white/[0.08] cursor-pointer" type="button" title="Toggle Recording State">
+                <button id="rec-toggle-btn" class="flex items-center gap-space-xs px-space-sm py-1.5 rounded-full bg-surface-container-high hover:bg-surface-variant hover:text-on-surface text-on-surface-variant transition-colors border border-white/[0.08] cursor-pointer" type="button" title="Toggle Recording & Streaming">
                     <span id="rec-dot" class="h-2 w-2 rounded-full bg-error animate-pulse"></span>
                     <span id="rec-label" class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface font-bold">Rec Active</span>
                 </button>
@@ -268,7 +268,7 @@
     </aside>
 
     <!-- ========================================================================= -->
-    <!-- MAIN WORKSPACE CONTENT CONTAINER (Offset for Fixed Sidebar)               -->
+    <!-- MAIN WORKSPACE CONTENT CONTAINER                                          -->
     <!-- ========================================================================= -->
     <div class="pl-64">
         <!-- ===================================================================== -->
@@ -301,7 +301,7 @@
                             <!-- Channel Telemetry Chip -->
                             <div class="flex items-center gap-1.5 px-space-sm py-1 rounded-full bg-surface-container-highest/60 text-on-surface-variant">
                                 <span class="material-symbols-outlined text-[14px] text-primary">sensors</span>
-                                <span class="font-label-sm text-label-sm">CH-01 • DUAL-TRACK ACTIVE</span>
+                                <span class="font-label-sm text-label-sm" id="active-route-chip">CH-01 • DUAL-TRACK ACTIVE</span>
                             </div>
                         </div>
 
@@ -309,7 +309,6 @@
                         <div class="flex-1 flex flex-col md:flex-row items-center gap-space-md justify-center px-space-sm min-w-0">
                             <!-- Frequency Bars Visualizer (32 dynamic responsive bars) -->
                             <div id="visualizer-container" class="w-full max-w-lg h-10 px-space-sm py-1 rounded-full bg-surface-container-lowest/90 flex items-center justify-between gap-0.5 shadow-inner overflow-hidden" title="Live Spectral Telemetry">
-                                <!-- Bars will be dynamically updated by JS animation loop -->
                                 <div class="spectrum-bar h-3 w-1 rounded-full bg-primary/40 transition-all duration-75"></div>
                                 <div class="spectrum-bar h-5 w-1 rounded-full bg-primary/60 transition-all duration-75"></div>
                                 <div class="spectrum-bar h-7 w-1 rounded-full bg-primary transition-all duration-75"></div>
@@ -378,57 +377,83 @@
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-md w-full items-start">
 
                     <!-- ===================================================================== -->
-                    <!-- 2. LEFT COLUMN: STUDIO CONTROL & HARDWARE PANEL (~320px / 3 Col)      -->
+                    <!-- 2. LEFT COLUMN: STUDIO CONTROL & CONFIGURABLE LANGUAGE MATRIX         -->
                     <!-- ===================================================================== -->
                     <aside class="lg:col-span-3 flex flex-col gap-space-md">
-                        <!-- Language Translation Matrix Card -->
+                        <!-- Configurable Language Translation Matrix Card -->
                         <div class="rounded-2xl bg-surface-container-low/90 backdrop-blur-md p-space-md flex flex-col gap-space-md shadow-xl border border-white/[0.04]">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-space-xs">
                                     <span class="material-symbols-outlined text-[18px] text-primary">translate</span>
                                     <span class="font-headline-sm text-body-md font-semibold text-on-surface">Language Matrix</span>
                                 </div>
-                                <span class="px-space-xs py-0.5 rounded-full bg-primary-container/20 text-primary font-label-sm text-label-sm uppercase">Bi-Directional</span>
+                                <span class="px-space-xs py-0.5 rounded-full bg-primary-container/20 text-primary font-label-sm text-label-sm uppercase font-bold">CONFIGURABLE</span>
                             </div>
 
-                            <!-- Source & Target Selector with Swap -->
+                            <!-- Interactive Source & Target Selectors with Swap Button -->
                             <div class="flex flex-col gap-space-xs relative">
-                                <!-- Source Channel -->
-                                <div class="p-space-sm rounded-xl bg-surface-container-high/90 flex flex-col gap-1 border border-white/[0.02]">
+                                <!-- Source Channel (Clickable Language Selector) -->
+                                <button id="source-lang-btn" class="group p-space-sm rounded-xl bg-surface-container-high/90 hover:bg-surface-variant flex flex-col gap-1 border border-white/[0.04] hover:border-primary/50 transition-all cursor-pointer w-full text-left shadow-sm" type="button" title="Click to change the language you are speaking">
                                     <div class="flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
-                                        <span id="source-channel-tag">SOURCE CHANNEL [IN]</span>
-                                        <span class="text-secondary font-telemetry-data text-label-sm">Auto-Pitch</span>
+                                        <span id="source-channel-tag" class="flex items-center gap-1 group-hover:text-primary transition-colors">
+                                            <span>SOURCE CHANNEL [IN]</span>
+                                            <span class="material-symbols-outlined text-[14px]">arrow_drop_down</span>
+                                        </span>
+                                        <span class="text-secondary font-telemetry-data text-label-sm font-bold">Spoken Mic</span>
                                     </div>
                                     <div class="flex items-center justify-between">
-                                        <span id="source-lang-name" class="font-headline-sm text-body-md font-bold text-on-surface">English (US)</span>
-                                        <span id="source-lang-code" class="font-telemetry-data text-label-sm text-outline">EN-US</span>
+                                        <div class="flex items-center gap-space-xs">
+                                            <span id="source-lang-flag" class="text-lg">🇺🇸</span>
+                                            <span id="source-lang-name" class="font-headline-sm text-body-md font-bold text-on-surface group-hover:text-primary transition-colors">English (US)</span>
+                                        </div>
+                                        <span id="source-lang-code" class="font-telemetry-data text-label-sm text-outline px-1.5 py-0.5 rounded-md bg-surface-container-lowest">EN-US</span>
                                     </div>
-                                    <span class="font-label-sm text-label-sm text-on-surface-variant">Realtime Neural VAD • Low Jitter</span>
-                                </div>
+                                    <span id="source-lang-desc" class="font-label-sm text-label-sm text-on-surface-variant">Realtime Neural VAD • Low Jitter</span>
+                                </button>
 
                                 <!-- Swap Button -->
                                 <div class="flex justify-center -my-2 relative z-20">
-                                    <button id="swap-lang-btn" class="w-8 h-8 rounded-full bg-surface-container-highest hover:bg-secondary hover:text-on-secondary text-primary transition-all flex items-center justify-center shadow-[0_0_12px_rgba(76,215,246,0.3)] cursor-pointer" type="button" title="Swap Source & Target Languages">
+                                    <button id="swap-lang-btn" class="w-8 h-8 rounded-full bg-surface-container-highest hover:bg-secondary hover:text-on-secondary text-primary transition-all flex items-center justify-center shadow-[0_0_12px_rgba(76,215,246,0.3)] cursor-pointer" type="button" title="Swap Source & Target Languages (Flipping Direction)">
                                         <span id="swap-icon" class="material-symbols-outlined text-[16px] transition-transform duration-300">swap_vert</span>
                                     </button>
                                 </div>
 
-                                <!-- Target Channel -->
-                                <div class="p-space-sm rounded-xl bg-surface-container-high/90 flex flex-col gap-1 border border-white/[0.02]">
+                                <!-- Target Channel (Clickable Language Selector) -->
+                                <button id="target-lang-btn" class="group p-space-sm rounded-xl bg-surface-container-high/90 hover:bg-surface-variant flex flex-col gap-1 border border-white/[0.04] hover:border-secondary/50 transition-all cursor-pointer w-full text-left shadow-sm" type="button" title="Click to change target synthesis language">
                                     <div class="flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
-                                        <span id="target-channel-tag">TARGET SYNTHESIS [OUT]</span>
-                                        <span id="target-tone-tag" class="text-primary font-telemetry-data text-label-sm">Keigo Active</span>
+                                        <span id="target-channel-tag" class="flex items-center gap-1 group-hover:text-secondary transition-colors">
+                                            <span>TARGET SYNTHESIS [OUT]</span>
+                                            <span class="material-symbols-outlined text-[14px]">arrow_drop_down</span>
+                                        </span>
+                                        <span id="target-tone-tag" class="text-primary font-telemetry-data text-label-sm font-bold bg-primary-container/20 px-1 rounded">Keigo Active</span>
                                     </div>
                                     <div class="flex items-center justify-between">
-                                        <span id="target-lang-name" class="font-headline-sm text-body-md font-bold text-on-surface">Japanese (日本語)</span>
-                                        <span id="target-lang-code" class="font-telemetry-data text-label-sm text-outline">JA-JP</span>
+                                        <div class="flex items-center gap-space-xs">
+                                            <span id="target-lang-flag" class="text-lg">🇯🇵</span>
+                                            <span id="target-lang-name" class="font-headline-sm text-body-md font-bold text-on-surface group-hover:text-secondary transition-colors">Japanese (日本語)</span>
+                                        </div>
+                                        <span id="target-lang-code" class="font-telemetry-data text-label-sm text-outline px-1.5 py-0.5 rounded-md bg-surface-container-lowest">JA-JP</span>
                                     </div>
                                     <span id="target-desc" class="font-label-sm text-label-sm text-on-surface-variant">Conversational Business Polite</span>
+                                </button>
+                            </div>
+
+                            <!-- Politeness & Style Quick Bar -->
+                            <div class="flex flex-col gap-1">
+                                <div class="flex items-center justify-between font-label-sm text-label-sm text-on-surface-variant">
+                                    <span class="uppercase">Translation Protocol / Tone</span>
+                                    <button id="target-tone-btn" class="text-secondary font-bold hover:underline cursor-pointer">Change Tone ▾</button>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <button class="btn-tone-pill flex-1 py-1 px-1 rounded-lg bg-primary-container text-on-primary-container font-label-sm text-[10px] font-bold text-center cursor-pointer transition-all" data-tone="polite">Polite</button>
+                                    <button class="btn-tone-pill flex-1 py-1 px-1 rounded-lg bg-surface-container-highest text-on-surface-variant hover:text-on-surface font-label-sm text-[10px] text-center cursor-pointer transition-all" data-tone="formal">Formal</button>
+                                    <button class="btn-tone-pill flex-1 py-1 px-1 rounded-lg bg-surface-container-highest text-on-surface-variant hover:text-on-surface font-label-sm text-[10px] text-center cursor-pointer transition-all" data-tone="casual">Casual</button>
+                                    <button class="btn-tone-pill flex-1 py-1 px-1 rounded-lg bg-surface-container-highest text-on-surface-variant hover:text-on-surface font-label-sm text-[10px] text-center cursor-pointer transition-all" data-tone="technical">Technical</button>
                                 </div>
                             </div>
 
                             <!-- Voice Model Timbre & Accent Slider -->
-                            <div class="flex flex-col gap-space-xs pt-space-xs">
+                            <div class="flex flex-col gap-space-xs pt-space-xs border-t border-white/[0.04]">
                                 <div class="flex items-center justify-between">
                                     <span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Voice Timbre Persona</span>
                                     <span id="timbre-label" class="font-telemetry-data text-label-sm text-secondary font-bold">Zephyr (Warm)</span>
@@ -440,7 +465,7 @@
                                     <div id="timbre-thumb" class="absolute left-2/3 -ml-2 w-4 h-4 rounded-full bg-on-surface shadow-[0_0_10px_rgba(255,255,255,0.7)] pointer-events-none transition-all duration-150"></div>
                                 </div>
                                 <div class="flex justify-between font-label-sm text-label-sm text-outline">
-                                    <button type="button" class="timbre-preset hover:text-secondary cursor-pointer" data-pos="15">Sterile Neutral</button>
+                                    <button type="button" class="timbre-preset hover:text-secondary cursor-pointer" data-pos="15">Sterile</button>
                                     <button type="button" class="timbre-preset text-secondary hover:text-secondary cursor-pointer" data-pos="66">Warm Natural</button>
                                     <button type="button" class="timbre-preset hover:text-secondary cursor-pointer" data-pos="95">Authoritative</button>
                                 </div>
@@ -552,8 +577,8 @@
                             </div>
                             <div class="flex flex-col gap-space-xs font-telemetry-data text-label-sm">
                                 <div class="flex items-center justify-between p-space-xs rounded-lg bg-surface-container-high">
-                                    <span class="text-on-surface-variant">Core Model</span>
-                                    <span class="text-primary font-bold">Gemini 2.5 Argon Live</span>
+                                    <span class="text-on-surface-variant">Active Pipeline</span>
+                                    <span id="telemetry-pipeline-label" class="text-secondary font-bold">EN-US → JA-JP</span>
                                 </div>
                                 <div class="flex items-center justify-between p-space-xs rounded-lg bg-surface-container-high">
                                     <span class="text-on-surface-variant">Socket Link</span>
@@ -569,7 +594,7 @@
                                 </div>
                             </div>
                             <div class="pt-space-xs flex items-center justify-between text-outline font-label-sm text-label-sm">
-                                <span>TOKEN REF: sk-live-...9f24</span>
+                                <span id="telemetry-key-ref">API KEY: Configured</span>
                                 <span class="text-secondary">99.98% Uptime</span>
                             </div>
                         </div>
@@ -670,35 +695,6 @@
                                             </button>
                                         </div>
                                     </div>
-
-                                    <!-- Utterance 3 -->
-                                    <div class="utterance-card rounded-xl bg-surface-container-low/95 p-space-sm flex flex-col gap-space-xs shadow-md border-l-2 border-secondary" data-speaker="Elena Rostova" data-conf="99.7">
-                                        <div class="flex items-center justify-between">
-                                            <div class="flex items-center gap-space-xs">
-                                                <span class="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-[10px]">ER</span>
-                                                <span class="font-headline-sm text-body-sm font-bold text-on-surface">Elena Rostova</span>
-                                                <span class="font-label-sm text-label-sm text-outline">Lead Architect</span>
-                                            </div>
-                                            <div class="flex items-center gap-1 font-telemetry-data text-label-sm text-on-surface-variant">
-                                                <span>10:42:48</span>
-                                                <button class="btn-copy-utterance p-0.5 hover:text-secondary cursor-pointer" type="button" title="Copy utterance to clipboard">
-                                                    <span class="material-symbols-outlined text-[14px]">content_copy</span>
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <p class="font-body-sm text-body-sm text-on-surface leading-relaxed utterance-text">
-                                            Precisely. The KV-cache footprint drops by nearly forty percent without drifting away from natural honorific phrasing.
-                                        </p>
-                                        <div class="flex items-center justify-between pt-1">
-                                            <div class="flex items-center gap-space-xs">
-                                                <span class="px-1.5 py-0.5 rounded-full bg-surface-container-highest text-secondary font-telemetry-data text-[10px]">99.7% CONF</span>
-                                                <span class="px-1.5 py-0.5 rounded-full bg-surface-container-highest text-secondary font-telemetry-data text-[10px]">CONFIRMED</span>
-                                            </div>
-                                            <button class="btn-play-audio hover:text-secondary cursor-pointer" type="button" data-lang="en-US" title="Listen to audio">
-                                                <span class="material-symbols-outlined text-[16px] text-tertiary">volume_up</span>
-                                            </button>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
 
@@ -721,11 +717,11 @@
                                                 <span class="font-telemetry-data text-label-sm text-tertiary">+124ms</span>
                                             </div>
                                             <div class="flex items-center gap-1 font-telemetry-data text-label-sm text-on-surface-variant">
-                                                <span class="text-secondary">Polite Keigo</span>
-                                                <button class="btn-play-audio p-0.5 hover:text-primary cursor-pointer" type="button" data-lang="ja-JP" title="Play synthesized Japanese voice">
+                                                <span class="text-secondary tone-tag-indicator">Polite Keigo</span>
+                                                <button class="btn-play-audio p-0.5 hover:text-primary cursor-pointer" type="button" data-lang="ja-JP" title="Play synthesized audio">
                                                     <span class="material-symbols-outlined text-[16px] text-primary">play_circle</span>
                                                 </button>
-                                                <button class="btn-copy-utterance p-0.5 hover:text-secondary cursor-pointer" type="button" title="Copy Japanese translation">
+                                                <button class="btn-copy-utterance p-0.5 hover:text-secondary cursor-pointer" type="button" title="Copy translation">
                                                     <span class="material-symbols-outlined text-[14px]">content_copy</span>
                                                 </button>
                                             </div>
@@ -747,11 +743,11 @@
                                                 <span class="font-telemetry-data text-label-sm text-tertiary">+138ms</span>
                                             </div>
                                             <div class="flex items-center gap-1 font-telemetry-data text-label-sm text-on-surface-variant">
-                                                <span class="text-secondary">Direct Inquiry</span>
-                                                <button class="btn-play-audio p-0.5 hover:text-primary cursor-pointer" type="button" data-lang="ja-JP" title="Play synthesized Japanese voice">
+                                                <span class="text-secondary tone-tag-indicator">Direct Inquiry</span>
+                                                <button class="btn-play-audio p-0.5 hover:text-primary cursor-pointer" type="button" data-lang="ja-JP" title="Play synthesized audio">
                                                     <span class="material-symbols-outlined text-[16px] text-primary">play_circle</span>
                                                 </button>
-                                                <button class="btn-copy-utterance p-0.5 hover:text-secondary cursor-pointer" type="button" title="Copy Japanese translation">
+                                                <button class="btn-copy-utterance p-0.5 hover:text-secondary cursor-pointer" type="button" title="Copy translation">
                                                     <span class="material-symbols-outlined text-[14px]">content_copy</span>
                                                 </button>
                                             </div>
@@ -762,32 +758,6 @@
                                         <div class="flex items-center justify-between pt-1">
                                             <span class="font-label-sm text-label-sm text-outline">Furigana: 投機的 [とうきてき]</span>
                                             <span class="font-telemetry-data text-[10px] text-primary font-bold">SYNTH OK</span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Translation 3 -->
-                                    <div class="translation-card rounded-xl bg-surface-container-low/95 p-space-sm flex flex-col gap-space-xs shadow-md border-r-2 border-primary-container" data-speaker="Elena Rostova">
-                                        <div class="flex items-center justify-between">
-                                            <div class="flex items-center gap-space-xs">
-                                                <span class="px-1.5 py-0.5 rounded-full bg-primary-container/20 text-primary font-label-sm text-label-sm font-bold">Elena [AI Synth]</span>
-                                                <span class="font-telemetry-data text-label-sm text-tertiary">+119ms</span>
-                                            </div>
-                                            <div class="flex items-center gap-1 font-telemetry-data text-label-sm text-on-surface-variant">
-                                                <span class="text-secondary">Affirmative Polite</span>
-                                                <button class="btn-play-audio p-0.5 hover:text-primary cursor-pointer" type="button" data-lang="ja-JP" title="Play synthesized Japanese voice">
-                                                    <span class="material-symbols-outlined text-[16px] text-primary">play_circle</span>
-                                                </button>
-                                                <button class="btn-copy-utterance p-0.5 hover:text-secondary cursor-pointer" type="button" title="Copy Japanese translation">
-                                                    <span class="material-symbols-outlined text-[14px]">content_copy</span>
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <p class="font-body-sm text-body-sm text-on-surface leading-relaxed translation-text">
-                                            その通りでございます。自然な敬語表現を損なうことなく、KVキャッシュの占有領域は約40パーセント削減されます。
-                                        </p>
-                                        <div class="flex items-center justify-between pt-1">
-                                            <span class="font-label-sm text-label-sm text-outline">Latency: 119ms • Jitter: 2ms</span>
-                                            <span class="font-telemetry-data text-[10px] text-primary font-bold">TTS CACHED</span>
                                         </div>
                                     </div>
                                 </div>
@@ -989,7 +959,7 @@
                 <div class="flex items-center justify-between pb-space-sm border-b border-white/[0.08]">
                     <div class="flex flex-col">
                         <h2 class="font-headline-lg text-headline-lg font-bold text-on-surface">Voice Synthesis &amp; Timbre Calibration</h2>
-                        <span class="text-on-surface-variant font-body-sm text-body-sm">Calibrate Gemini 2.5 neural voice personas with pitch, speed, and Keigo cadence profiles.</span>
+                        <span class="text-on-surface-variant font-body-sm text-body-sm">Calibrate Gemini 2.5 neural voice personas with pitch, speed, and language cadence profiles.</span>
                     </div>
                     <button class="btn-back-to-studio px-space-md py-2 rounded-full bg-primary-container text-on-primary-container font-bold text-label-md hover:bg-primary transition-all cursor-pointer">
                         Return to Live Studio
@@ -1016,7 +986,7 @@
                             <span class="font-headline-sm text-body-md font-bold text-on-surface">Kore</span>
                             <span class="px-space-xs py-0.5 rounded-full bg-surface-container-high text-on-surface-variant text-label-sm">AVAILABLE</span>
                         </div>
-                        <span class="text-on-surface-variant text-body-sm">Authoritative, clear executive cadence. Optimized for ceremonial Keigo (Sonkeigo &amp; Kenjougo).</span>
+                        <span class="text-on-surface-variant text-body-sm">Authoritative, clear executive cadence. Optimized for ceremonial Keigo and multilingual business speeches.</span>
                         <div class="pt-space-xs flex justify-between items-center">
                             <span class="font-telemetry-data text-label-sm text-outline">PITCH: -2st · WARMTH: 60%</span>
                             <button class="btn-test-persona px-space-sm py-1 rounded-full bg-surface-container-high text-on-surface text-label-sm font-bold cursor-pointer" data-voice="kore">Test Sample</button>
@@ -1042,7 +1012,7 @@
                     <div class="flex gap-space-sm">
                         <input id="tts-custom-input" type="text" value="リアルタイム音声翻訳エンジンは正常に稼働しております。" class="flex-1 bg-surface-container-lowest p-space-sm rounded-xl border border-white/[0.08] text-on-surface text-body-md outline-none" />
                         <button id="btn-speak-custom" class="px-space-lg py-2 rounded-xl bg-secondary text-on-secondary font-bold hover:bg-secondary-fixed transition-all cursor-pointer">
-                            Speak Japanese
+                            Speak Target
                         </button>
                     </div>
                 </div>
@@ -1068,7 +1038,7 @@
                     <div class="p-space-md rounded-2xl bg-surface-container-low border border-white/[0.05] flex flex-col gap-1">
                         <span class="text-on-surface-variant text-label-sm uppercase">Round-Trip Latency</span>
                         <span class="font-headline-lg text-secondary font-bold">38.4 ms</span>
-                        <span class="text-outline text-label-sm">Sub-40ms Tokyo Egress Target Met</span>
+                        <span class="text-outline text-label-sm">Sub-40ms Tokyo Target Met</span>
                     </div>
                     <div class="p-space-md rounded-2xl bg-surface-container-low border border-white/[0.05] flex flex-col gap-1">
                         <span class="text-on-surface-variant text-label-sm uppercase">Jitter Variance</span>
@@ -1171,13 +1141,85 @@
     <!-- MODALS & ACCESSIBLE DIALOGS                                               -->
     <!-- ========================================================================= -->
 
-    <!-- 1. ENGINE SETTINGS DIALOG -->
+    <!-- 1. LANGUAGE PICKER DIALOG -->
+    <dialog id="language-dialog" class="p-0 rounded-3xl bg-surface-container-low border border-white/[0.12] text-on-surface shadow-2xl max-w-lg w-full outline-none">
+        <div class="p-space-lg flex flex-col gap-space-md max-h-[85vh]">
+            <div class="flex items-center justify-between pb-space-xs border-b border-white/[0.08]">
+                <div class="flex items-center gap-space-xs">
+                    <span class="material-symbols-outlined text-[24px] text-primary">translate</span>
+                    <span id="language-dialog-title" class="font-headline-sm text-headline-sm font-bold">Select Language</span>
+                </div>
+                <button id="close-language-btn" class="p-1 rounded-full hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface cursor-pointer" type="button">
+                    <span class="material-symbols-outlined text-[20px]">close</span>
+                </button>
+            </div>
+
+            <!-- Search input -->
+            <div class="flex items-center gap-space-xs px-space-md py-2 rounded-full bg-surface-container-lowest border border-white/[0.08] shadow-inner">
+                <span class="material-symbols-outlined text-outline text-[18px]">search</span>
+                <input id="language-search-input" type="text" placeholder="Search language by name, native script, or code..." class="bg-transparent border-none text-on-surface text-body-sm outline-none w-full" autofocus />
+            </div>
+
+            <!-- Language Cards Grid -->
+            <div id="language-options-list" class="grid grid-cols-1 sm:grid-cols-2 gap-space-xs overflow-y-auto pr-1">
+                <!-- Dynamically populated via JS -->
+            </div>
+        </div>
+    </dialog>
+
+    <!-- 2. TONE & POLITENESS PICKER DIALOG -->
+    <dialog id="tone-dialog" class="p-0 rounded-3xl bg-surface-container-low border border-white/[0.12] text-on-surface shadow-2xl max-w-md w-full outline-none">
+        <div class="p-space-lg flex flex-col gap-space-md">
+            <div class="flex items-center justify-between pb-space-xs border-b border-white/[0.08]">
+                <div class="flex items-center gap-space-xs">
+                    <span class="material-symbols-outlined text-[24px] text-secondary">record_voice_over</span>
+                    <span class="font-headline-sm text-headline-sm font-bold">Select Politeness / Tone</span>
+                </div>
+                <button id="close-tone-btn" class="p-1 rounded-full hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface cursor-pointer" type="button">
+                    <span class="material-symbols-outlined text-[20px]">close</span>
+                </button>
+            </div>
+
+            <div class="flex flex-col gap-space-xs" id="tone-options-list">
+                <button class="tone-option-btn flex flex-col gap-0.5 p-space-sm rounded-2xl bg-surface-container-high hover:bg-surface-variant text-left transition-all cursor-pointer border border-transparent hover:border-secondary" data-tone="polite">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-on-surface">Conversational Polite (丁寧語 / Keigo)</span>
+                        <span class="text-secondary font-mono text-xs">DEFAULT</span>
+                    </div>
+                    <span class="text-on-surface-variant text-body-sm">Standard corporate business polite phrasing for meetings, discussions, and technical reviews.</span>
+                </button>
+                <button class="tone-option-btn flex flex-col gap-0.5 p-space-sm rounded-2xl bg-surface-container-high hover:bg-surface-variant text-left transition-all cursor-pointer border border-transparent hover:border-secondary" data-tone="formal">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-on-surface">Executive Formal (尊敬語・謙譲語)</span>
+                        <span class="text-primary font-mono text-xs">EXECUTIVE</span>
+                    </div>
+                    <span class="text-on-surface-variant text-body-sm">Strict high-respect protocol (Sonkeigo and Kenjougo) for keynote ceremonies and executive clients.</span>
+                </button>
+                <button class="tone-option-btn flex flex-col gap-0.5 p-space-sm rounded-2xl bg-surface-container-high hover:bg-surface-variant text-left transition-all cursor-pointer border border-transparent hover:border-secondary" data-tone="casual">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-on-surface">Casual Conversational (日常会話)</span>
+                        <span class="text-outline font-mono text-xs">CASUAL</span>
+                    </div>
+                    <span class="text-on-surface-variant text-body-sm">Friendly, colloquial, and warm informal dialogue between peers and close collaborators.</span>
+                </button>
+                <button class="tone-option-btn flex flex-col gap-0.5 p-space-sm rounded-2xl bg-surface-container-high hover:bg-surface-variant text-left transition-all cursor-pointer border border-transparent hover:border-secondary" data-tone="technical">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-on-surface">Direct Technical (常体・簡潔)</span>
+                        <span class="text-tertiary font-mono text-xs">CONCISE</span>
+                    </div>
+                    <span class="text-on-surface-variant text-body-sm">Unambiguous, terse engineering syntax prioritizing speed, clarity, and precision.</span>
+                </button>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- 3. ENGINE SETTINGS DIALOG -->
     <dialog id="settings-dialog" class="p-0 rounded-3xl bg-surface-container-low border border-white/[0.12] text-on-surface shadow-2xl max-w-lg w-full outline-none">
         <div class="p-space-lg flex flex-col gap-space-md">
             <div class="flex items-center justify-between pb-space-xs border-b border-white/[0.08]">
                 <div class="flex items-center gap-space-xs">
                     <span class="material-symbols-outlined text-[24px] text-primary">tune</span>
-                    <span class="font-headline-sm text-headline-sm font-bold">Engine &amp; Model Settings</span>
+                    <span class="font-headline-sm text-headline-sm font-bold">Engine &amp; Translation Settings</span>
                 </div>
                 <button id="close-settings-btn" class="p-1 rounded-full hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface cursor-pointer" type="button">
                     <span class="material-symbols-outlined text-[20px]">close</span>
@@ -1186,13 +1228,41 @@
 
             <!-- Settings Fields -->
             <div class="flex flex-col gap-space-md">
+                <!-- Translation Language Configuration -->
+                <div class="p-space-sm rounded-2xl bg-surface-container-high/60 border border-white/[0.06] flex flex-col gap-space-xs">
+                    <span class="font-label-sm text-label-sm text-secondary uppercase font-bold">Language Translation Matrix</span>
+                    <div class="grid grid-cols-2 gap-space-xs">
+                        <div class="flex flex-col gap-1">
+                            <label class="font-label-sm text-label-sm text-on-surface-variant">Source (You Speak)</label>
+                            <select id="setting-source-lang" class="bg-surface-container-highest text-on-surface p-space-sm rounded-xl border border-white/[0.08] outline-none text-xs">
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="font-label-sm text-label-sm text-on-surface-variant">Target (Gemini Speaks)</label>
+                            <select id="setting-target-lang" class="bg-surface-container-highest text-on-surface p-space-sm rounded-xl border border-white/[0.08] outline-none text-xs">
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-1 pt-1">
+                        <label class="font-label-sm text-label-sm text-on-surface-variant">Target Politeness Tone</label>
+                        <select id="setting-tone-select" class="bg-surface-container-highest text-on-surface p-space-sm rounded-xl border border-white/[0.08] outline-none text-xs">
+                            <option value="polite">Conversational Business Polite (丁寧語 / Keigo)</option>
+                            <option value="formal">Executive Formal (尊敬語・謙譲語)</option>
+                            <option value="casual">Casual Conversational (日常会話)</option>
+                            <option value="technical">Direct Technical (常体 / 簡潔)</option>
+                        </select>
+                    </div>
+                </div>
+
                 <!-- AI Model Select -->
                 <div class="flex flex-col gap-1">
                     <label class="font-label-sm text-label-sm text-on-surface-variant uppercase">Gemini Speech Model</label>
                     <select id="setting-model-select" class="bg-surface-container-high text-on-surface p-space-sm rounded-xl border border-white/[0.08] outline-none">
-                        <option value="gemini-2.5-argon" selected>Gemini 2.5 Argon Live (Speech-to-Speech Direct)</option>
-                        <option value="gemini-2.0-flash">Gemini 2.0 Flash Live (Bidi WebSocket)</option>
-                        <option value="gemini-1.5-pro">Gemini 1.5 Pro Live (High-Context)</option>
+                        <option value="models/gemini-2.0-flash-exp" selected>Gemini 2.0 Flash Live (Official Multimodal Live API)</option>
+                        <option value="models/gemini-2.5-argon">Gemini 2.5 Argon Live (Experimental S2S Direct)</option>
+                        <option value="models/gemini-2.0-flash">Gemini 2.0 Flash (Bidi Production)</option>
                     </select>
                 </div>
 
@@ -1214,23 +1284,13 @@
                 <div class="flex flex-col gap-1">
                     <label class="font-label-sm text-label-sm text-on-surface-variant uppercase">Operational Stream Mode</label>
                     <div class="grid grid-cols-2 gap-space-xs">
-                        <button id="mode-interactive-demo" class="p-space-sm rounded-xl border border-secondary bg-secondary/10 text-secondary text-label-sm font-bold text-center cursor-pointer">
+                        <button id="mode-interactive-demo" class="p-space-sm rounded-xl border border-white/[0.08] bg-surface-container-high text-on-surface-variant hover:text-on-surface text-label-sm text-center cursor-pointer">
                             Interactive Demo Studio
                         </button>
-                        <button id="mode-real-ws" class="p-space-sm rounded-xl border border-white/[0.08] bg-surface-container-high text-on-surface-variant hover:text-on-surface text-label-sm text-center cursor-pointer">
-                            Live Gemini WebSocket
+                        <button id="mode-real-ws" class="p-space-sm rounded-xl border border-secondary bg-secondary/10 text-secondary text-label-sm font-bold text-center cursor-pointer">
+                            Live Gemini WebSocket (Active)
                         </button>
                     </div>
-                </div>
-
-                <!-- Keigo Politeness -->
-                <div class="flex flex-col gap-1">
-                    <label class="font-label-sm text-label-sm text-on-surface-variant uppercase">Japanese Politeness Protocol (敬語)</label>
-                    <select id="setting-keigo-select" class="bg-surface-container-high text-on-surface p-space-sm rounded-xl border border-white/[0.08] outline-none">
-                        <option value="polite" selected>Teineigo (Conversational Business Polite - 丁寧語)</option>
-                        <option value="formal">Sonkeigo &amp; Kenjougo (Executive Formal - 尊敬語/謙譲語)</option>
-                        <option value="direct">Direct Technical (Clear Concise - 常体)</option>
-                    </select>
                 </div>
             </div>
 
@@ -1246,7 +1306,7 @@
         </div>
     </dialog>
 
-    <!-- 2. LEXICON DEFINITION DIALOG -->
+    <!-- 4. LEXICON DEFINITION DIALOG -->
     <dialog id="lexicon-dialog" class="p-0 rounded-3xl bg-surface-container-low border border-white/[0.12] text-on-surface shadow-2xl max-w-md w-full outline-none">
         <div class="p-space-lg flex flex-col gap-space-sm">
             <div class="flex items-center justify-between pb-1 border-b border-white/[0.08]">
@@ -1269,7 +1329,7 @@
         </div>
     </dialog>
 
-    <!-- 3. ARCHIVE CONFIRMATION DIALOG -->
+    <!-- 5. ARCHIVE CONFIRMATION DIALOG -->
     <dialog id="archive-dialog" class="p-0 rounded-3xl bg-surface-container-low border border-white/[0.12] text-on-surface shadow-2xl max-w-md w-full outline-none">
         <div class="p-space-lg flex flex-col gap-space-md">
             <div class="flex items-center gap-space-sm">
@@ -1281,7 +1341,7 @@
             </div>
             <div class="p-space-sm rounded-xl bg-surface-container-lowest/80 text-body-sm text-on-surface-variant flex flex-col gap-1">
                 <div>Elapsed Duration: <span id="archive-duration" class="text-secondary font-bold font-mono">00:25:02</span></div>
-                <div>Utterances Processed: <span class="text-on-surface font-bold">6 turns (Bilingual)</span></div>
+                <div>Routing: <span id="archive-routing" class="text-on-surface font-bold">English (US) → Japanese (日本語)</span></div>
                 <div>Action Items: <span class="text-on-surface font-bold">2 commitments recorded</span></div>
             </div>
             <div class="flex items-center justify-end gap-space-sm pt-space-xs">
@@ -1295,7 +1355,7 @@
         </div>
     </dialog>
 
-    <!-- 4. HARDWARE DEVICE PICKER DIALOG -->
+    <!-- 6. HARDWARE DEVICE PICKER DIALOG -->
     <dialog id="device-dialog" class="p-0 rounded-3xl bg-surface-container-low border border-white/[0.12] text-on-surface shadow-2xl max-w-sm w-full outline-none">
         <div class="p-space-md flex flex-col gap-space-sm">
             <div class="flex items-center justify-between pb-1 border-b border-white/[0.08]">
@@ -1304,51 +1364,75 @@
                     <span class="material-symbols-outlined text-[18px]">close</span>
                 </button>
             </div>
-            <div id="device-list" class="flex flex-col gap-1">
-                <!-- Dynamically generated device options -->
-            </div>
+            <div id="device-list" class="flex flex-col gap-1"></div>
         </div>
     </dialog>
 
-    <!-- ========================================================================= -->
-    <!-- FLOATING TOAST NOTIFICATION HUD                                           -->
-    <!-- ========================================================================= -->
+    <!-- FLOATING TOAST NOTIFICATION HUD -->
     <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
     <!-- ========================================================================= -->
-    <!-- FULL REACTIVE CLIENT INTERACTIVE SCRIPT                                   -->
+    <!-- FULL REACTIVE & WEBSOCKET ENGINE SCRIPT                                   -->
     <!-- ========================================================================= -->
     <script>
         (function () {
             'use strict';
 
             // -------------------------------------------------------------------------
+            // Supported Languages Catalog
+            // -------------------------------------------------------------------------
+            const SUPPORTED_LANGUAGES = [
+                { code: 'EN-US', name: 'English (US)', flag: '🇺🇸', speechLang: 'en-US', desc: 'Realtime Neural VAD • Low Jitter', voiceName: 'Zephyr' },
+                { code: 'JA-JP', name: 'Japanese (日本語)', flag: '🇯🇵', speechLang: 'ja-JP', desc: 'Keigo Politeness Protocol Active', voiceName: 'Kore' },
+                { code: 'EN-GB', name: 'English (UK)', flag: '🇬🇧', speechLang: 'en-GB', desc: 'Standard British Prosody & Idioms', voiceName: 'Puck' },
+                { code: 'ES-ES', name: 'Spanish (Español)', flag: '🇪🇸', speechLang: 'es-ES', desc: 'Castilian & Latin American Spanish', voiceName: 'Aoede' },
+                { code: 'FR-FR', name: 'French (Français)', flag: '🇫🇷', speechLang: 'fr-FR', desc: 'Metropolitan French Natural Phrasing', voiceName: 'Fenrir' },
+                { code: 'DE-DE', name: 'German (Deutsch)', flag: '🇩🇪', speechLang: 'de-DE', desc: 'Standard Hochdeutsch Articulation', voiceName: 'Kore' },
+                { code: 'ZH-CN', name: 'Chinese (Mandarin / 中文)', flag: '🇨🇳', speechLang: 'zh-CN', desc: 'Putonghua Standard Four Tones', voiceName: 'Aoede' },
+                { code: 'KO-KR', name: 'Korean (한국어)', flag: '🇰🇷', speechLang: 'ko-KR', desc: 'Honorific Jondaetmal (존댓말) Tuning', voiceName: 'Kore' },
+                { code: 'IT-IT', name: 'Italian (Italiano)', flag: '🇮🇹', speechLang: 'it-IT', desc: 'Standard Italian Conversational Flow', voiceName: 'Zephyr' },
+                { code: 'PT-BR', name: 'Portuguese (Português)', flag: '🇧🇷', speechLang: 'pt-BR', desc: 'Brazilian & Iberian Portuguese', voiceName: 'Puck' },
+                { code: 'HI-IN', name: 'Hindi (हिन्दी)', flag: '🇮🇳', speechLang: 'hi-IN', desc: 'Standard Hindi & Modern Conversational', voiceName: 'Fenrir' },
+                { code: 'AR-SA', name: 'Arabic (العربية)', flag: '🇸🇦', speechLang: 'ar-SA', desc: 'Modern Standard Arabic (الفصحى)', voiceName: 'Kore' },
+                { code: 'RU-RU', name: 'Russian (Русский)', flag: '🇷🇺', speechLang: 'ru-RU', desc: 'Standard Literary Russian Cadence', voiceName: 'Fenrir' },
+                { code: 'NL-NL', name: 'Dutch (Nederlands)', flag: '🇳🇱', speechLang: 'nl-NL', desc: 'Standard Algemeen Nederlands', voiceName: 'Zephyr' },
+                { code: 'VI-VN', name: 'Vietnamese (Tiếng Việt)', flag: '🇻🇳', speechLang: 'vi-VN', desc: 'Northern & Southern Tonal Prosody', voiceName: 'Aoede' }
+            ];
+
+            function getLanguageByCode(code) {
+                return SUPPORTED_LANGUAGES.find(l => l.code === code) || SUPPORTED_LANGUAGES[0];
+            }
+
+            // -------------------------------------------------------------------------
             // State Management
             // -------------------------------------------------------------------------
             const state = {
-                seconds: 25 * 60 + 2,
-                isTimerRunning: true,
-                timerInterval: null,
+                sourceLang: getLanguageByCode(localStorage.getItem('gemini_source_lang') || 'EN-US'),
+                targetLang: getLanguageByCode(localStorage.getItem('gemini_target_lang') || 'JA-JP'),
+                targetTone: localStorage.getItem('gemini_target_tone') || 'polite',
+                selectedModel: localStorage.getItem('gemini_model') || 'models/gemini-2.0-flash-exp',
+                apiKey: localStorage.getItem('gemini_api_key') || '',
+                isLiveSessionActive: false,
                 isMuted: false,
                 isPaused: false,
                 isRecordingActive: true,
+                seconds: 25 * 60 + 2,
+                isTimerRunning: true,
+                timerInterval: null,
                 activeTab: 'dual',
                 confidenceFilterActive: false,
                 autoScrollEnabled: true,
-                currentLanguageDirection: 'EN_TO_JA', // or 'JA_TO_EN'
-                timbrePreset: 66, // Warm Natural
+                timbrePreset: 66,
                 gainValue: 4.5,
                 deepFilterActive: true,
-                liveStreamingActive: true,
                 selectedMic: 'Shure SM7B via Scarlett 2i2 USB',
                 selectedMonitor: 'Studio Monitors (Balanced TRS)',
                 activeVoice: 'zephyr',
-                apiKey: localStorage.getItem('gemini_api_key') || '',
-                selectedModel: 'gemini-2.5-argon',
-                isRealWsMode: false,
                 ws: null,
                 audioContext: null,
-                mediaStream: null
+                mediaStream: null,
+                playbackContext: null,
+                nextPlayTime: 0
             };
 
             // -------------------------------------------------------------------------
@@ -1361,7 +1445,7 @@
                 const toast = document.createElement('div');
                 toast.className = `pointer-events-auto flex items-center gap-space-xs px-space-md py-2.5 rounded-full bg-surface-container-high/95 backdrop-blur-xl border border-white/[0.12] text-on-surface shadow-2xl font-body-sm text-body-sm transition-all duration-300 transform translate-y-4 opacity-0`;
                 
-                let iconColor = 'text-secondary';
+                let iconColor = 'text-secondary font-bold';
                 if (type === 'success') iconColor = 'text-secondary font-bold';
                 if (type === 'error') iconColor = 'text-error font-bold';
                 if (type === 'purple') iconColor = 'text-primary font-bold';
@@ -1385,55 +1469,531 @@
             }
 
             // -------------------------------------------------------------------------
-            // Session Timer Simulator
+            // Dynamic System Instruction Generator
             // -------------------------------------------------------------------------
-            function updateClockDisplay() {
-                const clockEl = document.getElementById('session-clock');
-                if (!clockEl) return;
-                const hrs = String(Math.floor(state.seconds / 3600)).padStart(2, '0');
-                const mins = String(Math.floor((state.seconds % 3600) / 60)).padStart(2, '0');
-                const secs = String(state.seconds % 60).padStart(2, '0');
-                clockEl.textContent = `${hrs}:${mins}:${secs}`;
-            }
-
-            function startTimer() {
-                if (state.timerInterval) clearInterval(state.timerInterval);
-                state.timerInterval = setInterval(() => {
-                    if (state.isTimerRunning && !state.isPaused) {
-                        state.seconds++;
-                        updateClockDisplay();
+            function buildSystemInstruction() {
+                const src = state.sourceLang;
+                const tgt = state.targetLang;
+                const tone = state.targetTone;
+                
+                let toneGuidance = "natural, accurate, and fluent";
+                if (tgt.code === 'JA-JP') {
+                    if (tone === 'formal') {
+                        toneGuidance = "formal executive honorific Japanese (尊敬語・謙譲語 - Sonkeigo and Kenjougo). Use respectful corporate executive diction.";
+                    } else if (tone === 'casual') {
+                        toneGuidance = "natural, friendly casual conversational Japanese (親しみやすい日常会話). Friendly, colloquial, and warm.";
+                    } else if (tone === 'technical') {
+                        toneGuidance = "direct, concise technical Japanese (常体・技術用語重視). Clear, unambiguous, and succinct.";
+                    } else {
+                        toneGuidance = "polite business Japanese (丁寧語・ビジネス敬語 - Teineigo). Professional, courteous, and standard.";
                     }
-                }, 1000);
+                } else if (tone === 'formal') {
+                    toneGuidance = "executive, formal, and diplomatic diction";
+                } else if (tone === 'casual') {
+                    toneGuidance = "natural, friendly conversational phrasing";
+                } else if (tone === 'technical') {
+                    toneGuidance = "concise, exact, technical precision";
+                } else {
+                    toneGuidance = "polite, clear, and professional translation";
+                }
+
+                return `You are a professional real-time speech-to-speech translator.
+The user is speaking in ${src.name} (${src.code}).
+Your job is to continuously translate everything the user speaks into ${tgt.name} (${tgt.code}) using ${toneGuidance}.
+
+Strict guidelines:
+1. Provide the direct translation immediately without commentary, preambles, or conversational replies.
+2. Output both text transcription of the translation and synthesized voice audio.
+3. DO NOT answer questions or engage in conversation with the user; translate ONLY what the user said into ${tgt.name}.
+4. If the user asks a question, translate the question itself into ${tgt.name}.
+5. Preserve all technical terminology, domain names, and numbers accurately.`;
             }
-            startTimer();
 
             // -------------------------------------------------------------------------
-            // Audio Speech Synthesis / Real-Time Auditory Feedback
+            // Update UI Reflecting Active Languages
             // -------------------------------------------------------------------------
-            function playUtteranceAudio(text, lang = 'ja-JP', buttonEl = null) {
+            function updateLanguageUI() {
+                const src = state.sourceLang;
+                const tgt = state.targetLang;
+                const tone = state.targetTone;
+
+                // Save to localStorage
+                localStorage.setItem('gemini_source_lang', src.code);
+                localStorage.setItem('gemini_target_lang', tgt.code);
+                localStorage.setItem('gemini_target_tone', tone);
+
+                // Source Channel UI
+                document.getElementById('source-lang-flag').textContent = src.flag;
+                document.getElementById('source-lang-name').textContent = src.name;
+                document.getElementById('source-lang-code').textContent = src.code;
+                document.getElementById('source-lang-desc').textContent = src.desc;
+
+                // Target Channel UI
+                document.getElementById('target-lang-flag').textContent = tgt.flag;
+                document.getElementById('target-lang-name').textContent = tgt.name;
+                document.getElementById('target-lang-code').textContent = tgt.code;
+
+                // Tone label
+                let toneLabel = 'Polite';
+                if (tone === 'formal') toneLabel = 'Formal Keigo';
+                if (tone === 'casual') toneLabel = 'Casual';
+                if (tone === 'technical') toneLabel = 'Technical';
+                document.getElementById('target-tone-tag').textContent = toneLabel;
+
+                // Descriptions
+                let targetDesc = 'Conversational Business Polite';
+                if (tone === 'formal') targetDesc = 'Executive Formal Honorific';
+                if (tone === 'casual') targetDesc = 'Natural Conversational Flow';
+                if (tone === 'technical') targetDesc = 'Concise Technical Syntax';
+                document.getElementById('target-desc').textContent = targetDesc;
+
+                // Feed headers
+                const srcShort = src.code.split('-')[0];
+                const tgtShort = tgt.code.split('-')[0];
+                document.getElementById('source-feed-title').textContent = `Cleaned Speech [${srcShort}]`;
+                document.getElementById('target-feed-title').textContent = `Translated Speech [${tgtShort}]`;
+                document.getElementById('target-feed-channel').textContent = `SYNTH CH-02 (${toneLabel.toUpperCase()})`;
+
+                // Telemetry
+                const pipelineLabel = document.getElementById('telemetry-pipeline-label');
+                if (pipelineLabel) pipelineLabel.textContent = `${src.code} → ${tgt.code}`;
+                const routeChip = document.getElementById('active-route-chip');
+                if (routeChip) routeChip.textContent = `CH-01 [${srcShort}] → CH-02 [${tgtShort}] ACTIVE`;
+
+                // Tone pills in matrix card
+                document.querySelectorAll('.btn-tone-pill').forEach(btn => {
+                    const btnTone = btn.getAttribute('data-tone');
+                    if (btnTone === tone) {
+                        btn.className = 'btn-tone-pill flex-1 py-1 px-1 rounded-lg bg-primary-container text-on-primary-container font-label-sm text-[10px] font-bold text-center cursor-pointer transition-all';
+                    } else {
+                        btn.className = 'btn-tone-pill flex-1 py-1 px-1 rounded-lg bg-surface-container-highest text-on-surface-variant hover:text-on-surface font-label-sm text-[10px] text-center cursor-pointer transition-all';
+                    }
+                });
+
+                // Update settings dropdowns if present
+                const setSrc = document.getElementById('setting-source-lang');
+                const setTgt = document.getElementById('setting-target-lang');
+                const setTone = document.getElementById('setting-tone-select');
+                if (setSrc) setSrc.value = src.code;
+                if (setTgt) setTgt.value = tgt.code;
+                if (setTone) setTone.value = tone;
+            }
+
+            // -------------------------------------------------------------------------
+            // Language Picker Dialog Logic
+            // -------------------------------------------------------------------------
+            const langDialog = document.getElementById('language-dialog');
+            const langDialogTitle = document.getElementById('language-dialog-title');
+            const langSearchInput = document.getElementById('language-search-input');
+            const langOptionsList = document.getElementById('language-options-list');
+            const closeLangBtn = document.getElementById('close-language-btn');
+            let currentLangTargetType = 'source'; // 'source' or 'target'
+
+            function renderLanguageOptions(filter = '') {
+                langOptionsList.innerHTML = '';
+                const query = filter.toLowerCase().trim();
+                const activeCode = currentLangTargetType === 'source' ? state.sourceLang.code : state.targetLang.code;
+
+                SUPPORTED_LANGUAGES.forEach(lang => {
+                    if (query && !lang.name.toLowerCase().includes(query) && !lang.code.toLowerCase().includes(query)) {
+                        return;
+                    }
+                    const isSelected = lang.code === activeCode;
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = `flex items-center justify-between p-space-sm rounded-2xl text-left transition-all cursor-pointer border ${isSelected ? 'bg-primary-container text-on-primary-container font-bold border-primary shadow-md' : 'bg-surface-container-high/70 hover:bg-surface-variant text-on-surface border-white/[0.04]'}`;
+                    btn.innerHTML = `
+                        <div class="flex items-center gap-space-xs truncate">
+                            <span class="text-xl shrink-0">${lang.flag}</span>
+                            <div class="flex flex-col truncate">
+                                <span class="font-headline-sm text-body-sm font-bold truncate">${lang.name}</span>
+                                <span class="text-[11px] opacity-70 truncate">${lang.desc}</span>
+                            </div>
+                        </div>
+                        <span class="font-telemetry-data text-label-sm px-1.5 py-0.5 rounded ${isSelected ? 'bg-primary text-on-primary' : 'bg-surface-container-lowest text-outline'} shrink-0 ml-1">${lang.code}</span>
+                    `;
+                    btn.addEventListener('click', () => {
+                        selectLanguage(lang, currentLangTargetType);
+                        langDialog.close();
+                    });
+                    langOptionsList.appendChild(btn);
+                });
+            }
+
+            function selectLanguage(lang, type) {
+                if (type === 'source') {
+                    if (state.targetLang.code === lang.code) {
+                        state.targetLang = state.sourceLang;
+                    }
+                    state.sourceLang = lang;
+                    showToast(`Spoken Source Language set to ${lang.name}`, "purple", "mic");
+                } else {
+                    if (state.sourceLang.code === lang.code) {
+                        state.sourceLang = state.targetLang;
+                    }
+                    state.targetLang = lang;
+                    showToast(`Translation Target Language set to ${lang.name}`, "purple", "translate");
+                }
+                updateLanguageUI();
+
+                // If WebSocket is actively connected, re-establish connection with new prompt
+                if (state.isLiveSessionActive && state.ws && state.ws.readyState === WebSocket.OPEN) {
+                    showToast(`Reconfiguring live speech session for ${state.sourceLang.name} → ${state.targetLang.name}...`, "info", "sync");
+                    restartLiveSession();
+                }
+            }
+
+            function openLanguagePicker(type) {
+                currentLangTargetType = type;
+                langDialogTitle.textContent = type === 'source' ? 'Select Spoken Language (What You Speak)' : 'Select Target Translation Language (Gemini Speaks)';
+                if (langSearchInput) langSearchInput.value = '';
+                renderLanguageOptions();
+                langDialog.showModal();
+            }
+
+            document.getElementById('source-lang-btn')?.addEventListener('click', () => openLanguagePicker('source'));
+            document.getElementById('target-lang-btn')?.addEventListener('click', () => openLanguagePicker('target'));
+            if (closeLangBtn) closeLangBtn.addEventListener('click', () => langDialog.close());
+
+            if (langSearchInput) {
+                langSearchInput.addEventListener('input', (e) => {
+                    renderLanguageOptions(e.target.value);
+                });
+            }
+
+            // -------------------------------------------------------------------------
+            // Tone / Politeness Dialog & Pills
+            // -------------------------------------------------------------------------
+            const toneDialog = document.getElementById('tone-dialog');
+            const closeToneBtn = document.getElementById('close-tone-btn');
+            const targetToneBtn = document.getElementById('target-tone-btn');
+
+            if (targetToneBtn && toneDialog) {
+                targetToneBtn.addEventListener('click', () => toneDialog.showModal());
+            }
+            if (closeToneBtn && toneDialog) {
+                closeToneBtn.addEventListener('click', () => toneDialog.close());
+            }
+
+            document.querySelectorAll('.tone-option-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    state.targetTone = btn.getAttribute('data-tone');
+                    updateLanguageUI();
+                    toneDialog.close();
+                    showToast(`Translation Tone protocol updated to: ${btn.querySelector('.font-bold').textContent}`, "purple", "record_voice_over");
+                    if (state.isLiveSessionActive) restartLiveSession();
+                });
+            });
+
+            document.querySelectorAll('.btn-tone-pill').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    state.targetTone = btn.getAttribute('data-tone');
+                    updateLanguageUI();
+                    showToast(`Translation tone updated: ${state.targetTone.toUpperCase()}`, "purple", "tune");
+                    if (state.isLiveSessionActive) restartLiveSession();
+                });
+            });
+
+            // -------------------------------------------------------------------------
+            // Swap Button: Flips Source and Target Immediately
+            // -------------------------------------------------------------------------
+            const swapLangBtn = document.getElementById('swap-lang-btn');
+            const swapIcon = document.getElementById('swap-icon');
+
+            if (swapLangBtn) {
+                swapLangBtn.addEventListener('click', () => {
+                    swapIcon.classList.toggle('rotate-180');
+                    const temp = state.sourceLang;
+                    state.sourceLang = state.targetLang;
+                    state.targetLang = temp;
+
+                    updateLanguageUI();
+                    showToast(`Language direction swapped: ${state.sourceLang.name} → ${state.targetLang.name}`, "purple", "swap_vert");
+
+                    if (state.isLiveSessionActive) restartLiveSession();
+                });
+            }
+
+            // -------------------------------------------------------------------------
+            // Gemini Live API: Real-Time WebSocket & Mic Audio Streaming
+            // -------------------------------------------------------------------------
+            function playPcmChunk(base64Data, sampleRate = 24000) {
+                try {
+                    if (!state.playbackContext) {
+                        state.playbackContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: sampleRate });
+                    }
+                    if (state.playbackContext.state === 'suspended') {
+                        state.playbackContext.resume();
+                    }
+
+                    const binaryStr = atob(base64Data);
+                    const bytes = new Uint8Array(binaryStr.length);
+                    for (let i = 0; i < binaryStr.length; i++) {
+                        bytes[i] = binaryStr.charCodeAt(i);
+                    }
+
+                    const int16Array = new Int16Array(bytes.buffer);
+                    const float32Array = new Float32Array(int16Array.length);
+                    for (let i = 0; i < int16Array.length; i++) {
+                        float32Array[i] = int16Array[i] / 32768.0;
+                    }
+
+                    const audioBuffer = state.playbackContext.createBuffer(1, float32Array.length, sampleRate);
+                    audioBuffer.getChannelData(0).set(float32Array);
+
+                    const sourceNode = state.playbackContext.createBufferSource();
+                    sourceNode.buffer = audioBuffer;
+                    sourceNode.connect(state.playbackContext.destination);
+
+                    const currentTime = state.playbackContext.currentTime;
+                    if (state.nextPlayTime < currentTime) {
+                        state.nextPlayTime = currentTime;
+                    }
+                    sourceNode.start(state.nextPlayTime);
+                    state.nextPlayTime += audioBuffer.duration;
+                } catch (err) {
+                    console.error("PCM Audio Playback error:", err);
+                }
+            }
+
+            async function startGeminiLiveSession() {
+                if (!state.apiKey) {
+                    openSettings();
+                    showToast("Please enter your Google AI Studio API Key to connect.", "error", "key");
+                    return;
+                }
+
+                showToast(`Connecting to Gemini Live WebSocket API [${state.sourceLang.code} → ${state.targetLang.code}]...`, "purple", "sensors");
+
+                // Establish Bidi WebSocket connection
+                const url = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=${state.apiKey}`;
+
+                try {
+                    state.ws = new WebSocket(url);
+                } catch (err) {
+                    console.error("WebSocket creation error:", err);
+                    showToast("Failed to initiate WebSocket connection.", "error", "error");
+                    return;
+                }
+
+                state.ws.onopen = async () => {
+                    console.log("Gemini Live WebSocket open!");
+                    state.isLiveSessionActive = true;
+                    updateStreamingBadgeUI(true);
+
+                    // 1. Send Setup Handshake with Dynamic Source and Target System Instruction
+                    const setupMsg = {
+                        setup: {
+                            model: state.selectedModel,
+                            generationConfig: {
+                                responseModalities: ["AUDIO", "TEXT"],
+                                speechConfig: {
+                                    voiceConfig: {
+                                        prebuiltVoiceConfig: {
+                                            voiceName: state.targetLang.voiceName || "Kore"
+                                        }
+                                    }
+                                }
+                            },
+                            systemInstruction: {
+                                parts: [{
+                                    text: buildSystemInstruction()
+                                }]
+                            }
+                        }
+                    };
+                    state.ws.send(JSON.stringify(setupMsg));
+                    console.log("Sent setup with systemInstruction:", setupMsg.setup.systemInstruction.parts[0].text);
+
+                    // 2. Capture Microphone Audio and stream 16kHz PCM
+                    try {
+                        state.audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+                        state.mediaStream = await navigator.mediaDevices.getUserMedia({
+                            audio: {
+                                channelCount: 1,
+                                sampleRate: 16000,
+                                echoCancellation: true,
+                                noiseSuppression: state.deepFilterActive
+                            }
+                        });
+
+                        const source = state.audioContext.createMediaStreamSource(state.mediaStream);
+                        const processor = state.audioContext.createScriptProcessor(4096, 1, 1);
+
+                        processor.onaudioprocess = (e) => {
+                            if (!state.ws || state.ws.readyState !== WebSocket.OPEN) return;
+                            if (state.isMuted || state.isPaused) return;
+
+                            const inputData = e.inputBuffer.getChannelData(0);
+                            const pcm16 = new Int16Array(inputData.length);
+                            for (let i = 0; i < inputData.length; i++) {
+                                pcm16[i] = Math.max(-1, Math.min(1, inputData[i])) * 0x7FFF;
+                            }
+
+                            let binary = '';
+                            const bytes = new Uint8Array(pcm16.buffer);
+                            for (let i = 0; i < bytes.byteLength; i++) {
+                                binary += String.fromCharCode(bytes[i]);
+                            }
+                            const base64Audio = btoa(binary);
+
+                            state.ws.send(JSON.stringify({
+                                realtimeInput: {
+                                    mediaChunks: [{
+                                        mimeType: "audio/pcm;rate=16000",
+                                        data: base64Audio
+                                    }]
+                                }
+                            }));
+                        };
+
+                        source.connect(processor);
+                        processor.connect(state.audioContext.destination);
+
+                        showToast(`Connected to Gemini Live! Speak in ${state.sourceLang.name} to hear translation in ${state.targetLang.name}.`, "success", "record_voice_over");
+                    } catch (micErr) {
+                        console.error("Microphone Access Error:", micErr);
+                        showToast("Microphone access denied. Running in Interactive Studio Demo mode.", "info", "mic_off");
+                    }
+                };
+
+                state.ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+
+                        // Audio synthesis chunks from Gemini
+                        if (data.serverContent?.modelTurn?.parts) {
+                            data.serverContent.modelTurn.parts.forEach(part => {
+                                // Play voice audio if provided
+                                if (part.inlineData?.data) {
+                                    playPcmChunk(part.inlineData.data);
+                                }
+                                // Render text transcription
+                                if (part.text) {
+                                    renderIncomingGeminiTurn(part.text);
+                                }
+                            });
+                        }
+                    } catch (e) {
+                        console.error("Message parse error:", e);
+                    }
+                };
+
+                state.ws.onerror = (e) => {
+                    console.error("WebSocket Error:", e);
+                    showToast("Gemini WebSocket error occurred.", "error", "error");
+                };
+
+                state.ws.onclose = () => {
+                    state.isLiveSessionActive = false;
+                    updateStreamingBadgeUI(false);
+                    console.log("Gemini Live WebSocket closed.");
+                };
+            }
+
+            function stopGeminiLiveSession() {
+                if (state.ws) {
+                    state.ws.close();
+                    state.ws = null;
+                }
+                if (state.audioContext) {
+                    state.audioContext.close();
+                    state.audioContext = null;
+                }
+                if (state.mediaStream) {
+                    state.mediaStream.getTracks().forEach(t => t.stop());
+                    state.mediaStream = null;
+                }
+                state.isLiveSessionActive = false;
+                updateStreamingBadgeUI(false);
+                showToast("Live Translation Session Ended.", "info", "stop");
+            }
+
+            function restartLiveSession() {
+                if (state.isLiveSessionActive) {
+                    stopGeminiLiveSession();
+                    setTimeout(startGeminiLiveSession, 300);
+                }
+            }
+
+            function renderIncomingGeminiTurn(translatedText) {
+                const targetContainer = document.getElementById('target-feed-container');
+                if (!targetContainer) return;
+
+                const card = document.createElement('div');
+                card.className = 'translation-card rounded-xl bg-surface-container-low/95 p-space-sm flex flex-col gap-space-xs shadow-md border-r-2 border-primary-container animate-pulse';
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-space-xs">
+                            <span class="px-1.5 py-0.5 rounded-full bg-primary-container/20 text-primary font-label-sm text-label-sm font-bold">Gemini Live [${state.targetLang.code.split('-')[0]}]</span>
+                            <span class="font-telemetry-data text-label-sm text-tertiary">+38ms</span>
+                        </div>
+                        <div class="flex items-center gap-1 font-telemetry-data text-label-sm text-on-surface-variant">
+                            <span class="text-secondary">${state.targetTone.toUpperCase()}</span>
+                            <button class="btn-play-audio p-0.5 hover:text-primary cursor-pointer" type="button" data-lang="${state.targetLang.speechLang}" title="Play audio">
+                                <span class="material-symbols-outlined text-[16px] text-primary">play_circle</span>
+                            </button>
+                            <button class="btn-copy-utterance p-0.5 hover:text-secondary cursor-pointer" type="button" title="Copy translation">
+                                <span class="material-symbols-outlined text-[14px]">content_copy</span>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="font-body-sm text-body-sm text-on-surface leading-relaxed translation-text">${translatedText}</p>
+                    <div class="flex items-center justify-between pt-1">
+                        <span class="font-label-sm text-label-sm text-outline">Target: ${state.targetLang.name}</span>
+                        <span class="font-telemetry-data text-[10px] text-primary font-bold">LIVE SYNTH</span>
+                    </div>
+                `;
+                targetContainer.appendChild(card);
+                setTimeout(() => card.classList.remove('animate-pulse'), 1200);
+                attachUtteranceListeners();
+                if (state.autoScrollEnabled) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+
+            function updateStreamingBadgeUI(isActive) {
+                const text = document.getElementById('streaming-badge-text');
+                const ping = document.getElementById('streaming-ping');
+                const dot = document.getElementById('streaming-dot');
+                if (!text || !dot) return;
+
+                if (isActive) {
+                    text.textContent = 'LIVE TRANSLATION STREAMING';
+                    if (ping) ping.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75';
+                    dot.className = 'relative inline-flex rounded-full h-2.5 w-2.5 bg-secondary';
+                } else {
+                    text.textContent = 'STREAMING STANDBY';
+                    if (ping) ping.className = 'hidden';
+                    dot.className = 'relative inline-flex rounded-full h-2.5 w-2.5 bg-outline';
+                }
+            }
+
+            // -------------------------------------------------------------------------
+            // Audio Speech Synthesis / Fallback Player
+            // -------------------------------------------------------------------------
+            function playUtteranceAudio(text, lang = null, buttonEl = null) {
+                const targetSpeechLang = lang || state.targetLang.speechLang;
+
                 if (!('speechSynthesis' in window)) {
                     showToast("Speech synthesis not supported in this browser.", "error", "error");
                     return;
                 }
 
-                // If already speaking, cancel
                 if (window.speechSynthesis.speaking) {
                     window.speechSynthesis.cancel();
                     if (buttonEl) {
                         const icon = buttonEl.querySelector('.material-symbols-outlined');
-                        if (icon) icon.textContent = lang === 'ja-JP' ? 'play_circle' : 'volume_up';
+                        if (icon) icon.textContent = 'play_circle';
                     }
                     return;
                 }
 
                 const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = lang;
+                utterance.lang = targetSpeechLang;
                 utterance.rate = 1.0;
                 utterance.pitch = state.timbrePreset > 70 ? 0.9 : 1.05;
 
-                // Pick appropriate voice if available
                 const voices = window.speechSynthesis.getVoices();
-                const matchedVoice = voices.find(v => v.lang.startsWith(lang.slice(0, 2)));
+                const matchedVoice = voices.find(v => v.lang.startsWith(targetSpeechLang.slice(0, 2)));
                 if (matchedVoice) utterance.voice = matchedVoice;
 
                 if (buttonEl) {
@@ -1447,10 +2007,9 @@
                 }
 
                 window.speechSynthesis.speak(utterance);
-                showToast(`Playing audio synthesis [${lang}]...`, "purple", "graphic_eq");
+                showToast(`Synthesizing voice playback [${targetSpeechLang}]...`, "purple", "graphic_eq");
             }
 
-            // Web Audio Beep / Test Tone Generator
             function playTestTone(frequency = 440, durationSec = 1.2) {
                 try {
                     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1475,11 +2034,9 @@
             // -------------------------------------------------------------------------
             const bars = document.querySelectorAll('.spectrum-bar');
             const oscPath = document.getElementById('oscilloscope-path');
-            let animFrameId = null;
 
             function runVisualizerAnimation() {
-                if (!state.isMuted && !state.isPaused && state.liveStreamingActive) {
-                    // Jitter bars with realistic acoustic heights
+                if (!state.isMuted && !state.isPaused) {
                     bars.forEach((bar, idx) => {
                         const base = 4;
                         const rand = Math.sin(Date.now() / 150 + idx) * 12 + Math.random() * 16;
@@ -1487,7 +2044,6 @@
                         bar.style.height = `${height}px`;
                     });
 
-                    // Modulate SVG Oscilloscope wave
                     if (oscPath && Date.now() % 4 === 0) {
                         const t = Date.now() / 200;
                         const y1 = Math.floor(12 + Math.sin(t) * 9);
@@ -1496,11 +2052,10 @@
                         oscPath.setAttribute('d', `M0 12 Q 15 ${y1}, 30 12 T 60 ${y2} T 80 ${y3} T 100 12`);
                     }
                 } else {
-                    // Idle / Muted baseline
                     bars.forEach(bar => { bar.style.height = '4px'; });
                     if (oscPath) oscPath.setAttribute('d', 'M0 12 L 100 12');
                 }
-                animFrameId = requestAnimationFrame(runVisualizerAnimation);
+                requestAnimationFrame(runVisualizerAnimation);
             }
             runVisualizerAnimation();
 
@@ -1557,15 +2112,25 @@
 
             if (recToggleBtn) {
                 recToggleBtn.addEventListener('click', () => {
-                    state.isRecordingActive = !state.isRecordingActive;
-                    if (state.isRecordingActive) {
-                        recDot.className = 'h-2 w-2 rounded-full bg-error animate-pulse';
-                        recLabel.textContent = 'Rec Active';
-                        showToast("Recording active (Opus 24kHz multi-track)", "success", "fiber_manual_record");
-                    } else {
+                    if (state.isLiveSessionActive) {
+                        stopGeminiLiveSession();
                         recDot.className = 'h-2 w-2 rounded-full bg-outline';
                         recLabel.textContent = 'Rec Paused';
-                        showToast("Recording suspended", "info", "stop");
+                    } else {
+                        startGeminiLiveSession();
+                        recDot.className = 'h-2 w-2 rounded-full bg-error animate-pulse';
+                        recLabel.textContent = 'Rec Active';
+                    }
+                });
+            }
+
+            const streamingBadgeBtn = document.getElementById('streaming-badge-btn');
+            if (streamingBadgeBtn) {
+                streamingBadgeBtn.addEventListener('click', () => {
+                    if (state.isLiveSessionActive) {
+                        stopGeminiLiveSession();
+                    } else {
+                        startGeminiLiveSession();
                     }
                 });
             }
@@ -1584,7 +2149,7 @@
                         li.className = 'flex items-start gap-space-xs animate-pulse';
                         li.innerHTML = `
                             <span class="text-primary mt-1 font-bold">★</span>
-                            <span><strong>[Snapshot @ ${timeStamp}]:</strong> Key architectural alignment approved for Japanese Keigo pipeline.</span>
+                            <span><strong>[Snapshot @ ${timeStamp}]:</strong> Language routing confirmed for ${state.sourceLang.name} → ${state.targetLang.name} (${state.targetTone}).</span>
                         `;
                         briefList.insertBefore(li, briefList.firstChild);
                         setTimeout(() => li.classList.remove('animate-pulse'), 1500);
@@ -1602,7 +2167,9 @@
                 archiveBtn.addEventListener('click', () => {
                     const clockEl = document.getElementById('session-clock');
                     const durationEl = document.getElementById('archive-duration');
+                    const routingEl = document.getElementById('archive-routing');
                     if (durationEl && clockEl) durationEl.textContent = clockEl.textContent;
+                    if (routingEl) routingEl.textContent = `${state.sourceLang.name} → ${state.targetLang.name}`;
                     archiveDialog.showModal();
                 });
             }
@@ -1619,76 +2186,142 @@
                 });
             }
 
-            // Streaming Badge Toggle
-            const streamingBadgeBtn = document.getElementById('streaming-badge-btn');
-            if (streamingBadgeBtn) {
-                streamingBadgeBtn.addEventListener('click', () => {
-                    state.liveStreamingActive = !state.liveStreamingActive;
-                    const text = document.getElementById('streaming-badge-text');
-                    const ping = document.getElementById('streaming-ping');
-                    const dot = document.getElementById('streaming-dot');
+            // -------------------------------------------------------------------------
+            // Session Timer Simulator
+            // -------------------------------------------------------------------------
+            function updateClockDisplay() {
+                const clockEl = document.getElementById('session-clock');
+                if (!clockEl) return;
+                const hrs = String(Math.floor(state.seconds / 3600)).padStart(2, '0');
+                const mins = String(Math.floor((state.seconds % 3600) / 60)).padStart(2, '0');
+                const secs = String(state.seconds % 60).padStart(2, '0');
+                clockEl.textContent = `${hrs}:${mins}:${secs}`;
+            }
 
-                    if (state.liveStreamingActive) {
-                        text.textContent = 'LIVE TRANSLATION STREAMING';
-                        ping.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75';
-                        dot.className = 'relative inline-flex rounded-full h-2.5 w-2.5 bg-secondary';
-                        showToast("Live translation streaming active", "success", "sensors");
+            function startTimer() {
+                if (state.timerInterval) clearInterval(state.timerInterval);
+                state.timerInterval = setInterval(() => {
+                    if (state.isTimerRunning && !state.isPaused) {
+                        state.seconds++;
+                        updateClockDisplay();
+                    }
+                }, 1000);
+            }
+            startTimer();
+
+            // -------------------------------------------------------------------------
+            // Center Column: View Tabs (Dual, Interleaved, Diarized)
+            // -------------------------------------------------------------------------
+            const viewTabs = document.querySelectorAll('.view-tab-btn');
+            const transcriptGrid = document.getElementById('transcript-grid');
+            const subcolSource = document.getElementById('subcol-source');
+            const subcolTarget = document.getElementById('subcol-target');
+
+            viewTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    viewTabs.forEach(t => {
+                        t.className = 'view-tab-btn px-space-sm py-1 rounded-full text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm cursor-pointer transition-all';
+                    });
+                    tab.className = 'view-tab-btn px-space-sm py-1 rounded-full bg-primary-container text-on-primary-container font-label-sm text-label-sm font-bold shadow-sm cursor-pointer transition-all';
+
+                    const mode = tab.getAttribute('data-view');
+                    state.activeTab = mode;
+
+                    if (mode === 'dual') {
+                        transcriptGrid.className = 'grid grid-cols-1 md:grid-cols-2 gap-space-sm';
+                        subcolSource.classList.remove('hidden');
+                        subcolTarget.classList.remove('hidden');
+                        showToast("Layout: Side-by-Side Dual Stream", "info", "view_column");
+                    } else if (mode === 'interleaved') {
+                        transcriptGrid.className = 'grid grid-cols-1 gap-space-sm';
+                        subcolSource.classList.remove('hidden');
+                        subcolTarget.classList.remove('hidden');
+                        showToast("Layout: Interleaved Feed", "info", "chat");
+                    } else if (mode === 'diarized') {
+                        transcriptGrid.className = 'grid grid-cols-1 md:grid-cols-2 gap-space-sm';
+                        subcolSource.classList.remove('hidden');
+                        subcolTarget.classList.remove('hidden');
+                        showToast("Layout: Diarized Speaker Grouping", "info", "group");
+                    }
+                });
+            });
+
+            // Confidence Filter Toggle
+            const confFilterBtn = document.getElementById('btn-conf-filter');
+            if (confFilterBtn) {
+                confFilterBtn.addEventListener('click', () => {
+                    state.confidenceFilterActive = !state.confidenceFilterActive;
+                    if (state.confidenceFilterActive) {
+                        confFilterBtn.classList.add('bg-secondary-container/20', 'text-secondary', 'font-bold');
+                        showToast("Confidence filter active (>95% threshold)", "success", "filter_alt");
                     } else {
-                        text.textContent = 'STREAMING STANDBY';
-                        ping.className = 'hidden';
-                        dot.className = 'relative inline-flex rounded-full h-2.5 w-2.5 bg-outline';
-                        showToast("Translation streaming set to standby", "info", "sensors_off");
+                        confFilterBtn.classList.remove('bg-secondary-container/20', 'text-secondary', 'font-bold');
+                        showToast("Confidence filter cleared", "info", "filter_alt_off");
+                    }
+                });
+            }
+
+            // Auto-Scroll Toggle
+            const autoScrollBtn = document.getElementById('btn-autoscroll');
+            if (autoScrollBtn) {
+                autoScrollBtn.addEventListener('click', () => {
+                    state.autoScrollEnabled = !state.autoScrollEnabled;
+                    const icon = document.getElementById('autoscroll-icon');
+                    if (state.autoScrollEnabled) {
+                        autoScrollBtn.classList.add('bg-secondary-container/20', 'text-secondary');
+                        if (icon) icon.textContent = 'vertical_align_bottom';
+                        showToast("Anchor auto-scroll locked to newest utterance", "success", "lock");
+                    } else {
+                        autoScrollBtn.classList.remove('bg-secondary-container/20', 'text-secondary');
+                        if (icon) icon.textContent = 'vertical_align_center';
+                        showToast("Anchor auto-scroll unlocked", "info", "lock_open");
                     }
                 });
             }
 
             // -------------------------------------------------------------------------
-            // Language Matrix: Swap Button
+            // Utterance Actions: Copy & Play Audio
             // -------------------------------------------------------------------------
-            const swapLangBtn = document.getElementById('swap-lang-btn');
-            const swapIcon = document.getElementById('swap-icon');
+            function attachUtteranceListeners() {
+                document.querySelectorAll('.btn-copy-utterance').forEach(btn => {
+                    btn.onclick = (e) => {
+                        e.stopPropagation();
+                        const card = btn.closest('.utterance-card, .translation-card');
+                        const textEl = card.querySelector('.utterance-text, .translation-text');
+                        if (textEl) {
+                            navigator.clipboard.writeText(textEl.textContent.trim()).then(() => {
+                                const icon = btn.querySelector('.material-symbols-outlined');
+                                if (icon) {
+                                    const orig = icon.textContent;
+                                    icon.textContent = 'check';
+                                    icon.classList.add('text-secondary');
+                                    setTimeout(() => {
+                                        icon.textContent = orig;
+                                        icon.classList.remove('text-secondary');
+                                    }, 1500);
+                                }
+                                showToast("Utterance copied to clipboard!", "success", "content_copy");
+                            });
+                        }
+                    };
+                });
 
-            if (swapLangBtn) {
-                swapLangBtn.addEventListener('click', () => {
-                    // Rotate animation
-                    swapIcon.classList.toggle('rotate-180');
-
-                    if (state.currentLanguageDirection === 'EN_TO_JA') {
-                        state.currentLanguageDirection = 'JA_TO_EN';
-
-                        document.getElementById('source-lang-name').textContent = 'Japanese (日本語)';
-                        document.getElementById('source-lang-code').textContent = 'JA-JP';
-                        document.getElementById('target-lang-name').textContent = 'English (US)';
-                        document.getElementById('target-lang-code').textContent = 'EN-US';
-                        document.getElementById('target-tone-tag').textContent = 'Clear Direct';
-                        document.getElementById('target-desc').textContent = 'Fluid American English Translation';
-
-                        document.getElementById('source-feed-title').textContent = 'Cleaned Speech [JA]';
-                        document.getElementById('target-feed-title').textContent = 'Translated Speech [EN]';
-                        document.getElementById('target-feed-channel').textContent = 'SYNTH CH-02 (DIRECT)';
-
-                        showToast("Swapped Direction: Japanese → English", "purple", "swap_vert");
-                    } else {
-                        state.currentLanguageDirection = 'EN_TO_JA';
-
-                        document.getElementById('source-lang-name').textContent = 'English (US)';
-                        document.getElementById('source-lang-code').textContent = 'EN-US';
-                        document.getElementById('target-lang-name').textContent = 'Japanese (日本語)';
-                        document.getElementById('target-lang-code').textContent = 'JA-JP';
-                        document.getElementById('target-tone-tag').textContent = 'Keigo Active';
-                        document.getElementById('target-desc').textContent = 'Conversational Business Polite';
-
-                        document.getElementById('source-feed-title').textContent = 'Cleaned Speech [EN]';
-                        document.getElementById('target-feed-title').textContent = 'Translated Speech [JA]';
-                        document.getElementById('target-feed-channel').textContent = 'SYNTH CH-02 (KEIGO)';
-
-                        showToast("Swapped Direction: English → Japanese", "purple", "swap_vert");
-                    }
+                document.querySelectorAll('.btn-play-audio').forEach(btn => {
+                    btn.onclick = (e) => {
+                        e.stopPropagation();
+                        const card = btn.closest('.utterance-card, .translation-card');
+                        const textEl = card.querySelector('.utterance-text, .translation-text');
+                        const lang = btn.getAttribute('data-lang') || (card.classList.contains('translation-card') ? state.targetLang.speechLang : state.sourceLang.speechLang);
+                        if (textEl) {
+                            playUtteranceAudio(textEl.textContent.trim(), lang, btn);
+                        }
+                    };
                 });
             }
+            attachUtteranceListeners();
 
             // -------------------------------------------------------------------------
-            // Voice Timbre Persona Slider
+            // Preamp Gain, Timbre Persona & Hardware Controls
             // -------------------------------------------------------------------------
             const timbreTrack = document.getElementById('timbre-slider-track');
             const timbreFill = document.getElementById('timbre-fill');
@@ -1697,8 +2330,8 @@
 
             function setTimbrePreset(pct) {
                 state.timbrePreset = pct;
-                timbreFill.style.width = `${pct}%`;
-                timbreThumb.style.left = `${pct}%`;
+                if (timbreFill) timbreFill.style.width = `${pct}%`;
+                if (timbreThumb) timbreThumb.style.left = `${pct}%`;
 
                 if (pct < 35) {
                     timbreLabel.textContent = 'Sterile Neutral (Lyra)';
@@ -1727,9 +2360,6 @@
                 });
             });
 
-            // -------------------------------------------------------------------------
-            // Preamp Gain Slider
-            // -------------------------------------------------------------------------
             const gainTrack = document.getElementById('gain-slider-track');
             const gainFill = document.getElementById('gain-fill');
             const gainLabel = document.getElementById('gain-label');
@@ -1745,13 +2375,10 @@
                     gainLabel.textContent = formatted;
                     state.gainValue = parseFloat(db);
                     stereoVal.textContent = `${(-12.4 + state.gainValue * 0.4).toFixed(1)} dBFS`;
-                    showToast(`Input Preamp Gain calibrated to ${formatted}`, "info", "equalizer");
+                    showToast(`Preamp Gain calibrated to ${formatted}`, "info", "equalizer");
                 });
             }
 
-            // -------------------------------------------------------------------------
-            // DeepFilter AI Toggle
-            // -------------------------------------------------------------------------
             const deepFilterBtn = document.getElementById('deepfilter-btn');
             const deepFilterBadge = document.getElementById('deepfilter-badge');
 
@@ -1770,9 +2397,7 @@
                 });
             }
 
-            // -------------------------------------------------------------------------
-            // Hardware Routing Device Picker Dialog
-            // -------------------------------------------------------------------------
+            // Hardware Device Picker Dialog
             const micBtn = document.getElementById('mic-dropdown-btn');
             const monitorBtn = document.getElementById('monitor-dropdown-btn');
             const deviceDialog = document.getElementById('device-dialog');
@@ -1834,152 +2459,24 @@
             if (closeDeviceBtn) closeDeviceBtn.addEventListener('click', () => deviceDialog.close());
 
             // -------------------------------------------------------------------------
-            // Center Column: View Tabs (Dual, Interleaved, Diarized)
-            // -------------------------------------------------------------------------
-            const viewTabs = document.querySelectorAll('.view-tab-btn');
-            const transcriptGrid = document.getElementById('transcript-grid');
-            const subcolSource = document.getElementById('subcol-source');
-            const subcolTarget = document.getElementById('subcol-target');
-
-            viewTabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    viewTabs.forEach(t => {
-                        t.className = 'view-tab-btn px-space-sm py-1 rounded-full text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm cursor-pointer transition-all';
-                    });
-                    tab.className = 'view-tab-btn px-space-sm py-1 rounded-full bg-primary-container text-on-primary-container font-label-sm text-label-sm font-bold shadow-sm cursor-pointer transition-all';
-
-                    const mode = tab.getAttribute('data-view');
-                    state.activeTab = mode;
-
-                    if (mode === 'dual') {
-                        transcriptGrid.className = 'grid grid-cols-1 md:grid-cols-2 gap-space-sm';
-                        subcolSource.classList.remove('hidden');
-                        subcolTarget.classList.remove('hidden');
-                        showToast("Layout switched: Side-by-Side Dual Stream", "info", "view_column");
-                    } else if (mode === 'interleaved') {
-                        transcriptGrid.className = 'grid grid-cols-1 gap-space-sm';
-                        subcolSource.classList.remove('hidden');
-                        subcolTarget.classList.remove('hidden');
-                        showToast("Layout switched: Interleaved Conversational Feed", "info", "chat");
-                    } else if (mode === 'diarized') {
-                        transcriptGrid.className = 'grid grid-cols-1 md:grid-cols-2 gap-space-sm';
-                        subcolSource.classList.remove('hidden');
-                        subcolTarget.classList.remove('hidden');
-                        showToast("Layout switched: Diarized Speaker Grouping", "info", "group");
-                    }
-                });
-            });
-
-            // Confidence Filter Toggle
-            const confFilterBtn = document.getElementById('btn-conf-filter');
-            if (confFilterBtn) {
-                confFilterBtn.addEventListener('click', () => {
-                    state.confidenceFilterActive = !state.confidenceFilterActive;
-                    if (state.confidenceFilterActive) {
-                        confFilterBtn.classList.add('bg-secondary-container/20', 'text-secondary', 'font-bold');
-                        showToast("Confidence filter active (>95% confidence highlighted)", "success", "filter_alt");
-                    } else {
-                        confFilterBtn.classList.remove('bg-secondary-container/20', 'text-secondary', 'font-bold');
-                        showToast("Confidence filter cleared", "info", "filter_alt_off");
-                    }
-                });
-            }
-
-            // Auto-Scroll Toggle
-            const autoScrollBtn = document.getElementById('btn-autoscroll');
-            if (autoScrollBtn) {
-                autoScrollBtn.addEventListener('click', () => {
-                    state.autoScrollEnabled = !state.autoScrollEnabled;
-                    const icon = document.getElementById('autoscroll-icon');
-                    if (state.autoScrollEnabled) {
-                        autoScrollBtn.classList.add('bg-secondary-container/20', 'text-secondary');
-                        if (icon) icon.textContent = 'vertical_align_bottom';
-                        showToast("Anchor auto-scroll locked to newest utterance", "success", "lock");
-                    } else {
-                        autoScrollBtn.classList.remove('bg-secondary-container/20', 'text-secondary');
-                        if (icon) icon.textContent = 'vertical_align_center';
-                        showToast("Anchor auto-scroll unlocked", "info", "lock_open");
-                    }
-                });
-            }
-
-            // -------------------------------------------------------------------------
-            // Utterance Actions: Copy & Play Audio
-            // -------------------------------------------------------------------------
-            function attachUtteranceListeners() {
-                // Copy buttons
-                document.querySelectorAll('.btn-copy-utterance').forEach(btn => {
-                    btn.onclick = (e) => {
-                        e.stopPropagation();
-                        const card = btn.closest('.utterance-card, .translation-card');
-                        const textEl = card.querySelector('.utterance-text, .translation-text');
-                        if (textEl) {
-                            navigator.clipboard.writeText(textEl.textContent.trim()).then(() => {
-                                const icon = btn.querySelector('.material-symbols-outlined');
-                                if (icon) {
-                                    const orig = icon.textContent;
-                                    icon.textContent = 'check';
-                                    icon.classList.add('text-secondary');
-                                    setTimeout(() => {
-                                        icon.textContent = orig;
-                                        icon.classList.remove('text-secondary');
-                                    }, 1500);
-                                }
-                                showToast("Utterance copied to clipboard!", "success", "content_copy");
-                            });
-                        }
-                    };
-                });
-
-                // Play Audio Buttons
-                document.querySelectorAll('.btn-play-audio').forEach(btn => {
-                    btn.onclick = (e) => {
-                        e.stopPropagation();
-                        const card = btn.closest('.utterance-card, .translation-card');
-                        const textEl = card.querySelector('.utterance-text, .translation-text');
-                        const lang = btn.getAttribute('data-lang') || 'ja-JP';
-                        if (textEl) {
-                            playUtteranceAudio(textEl.textContent.trim(), lang, btn);
-                        }
-                    };
-                });
-            }
-            attachUtteranceListeners();
-
-            // -------------------------------------------------------------------------
-            // Realtime Ingestion Simulation / New Utterance Trigger
+            // Simulated Ingestion Banner
             // -------------------------------------------------------------------------
             const simulateBanner = document.getElementById('streaming-banner');
             const simulateBtn = document.getElementById('btn-simulate-turn');
 
-            const simulatedTurns = [
-                {
-                    speaker: 'Elena Rostova',
-                    initials: 'ER',
-                    role: 'Lead Architect',
-                    en: 'Production load testing on the Tokyo edge nodes confirmed zero dropped frames during 50 concurrent Opus streams.',
-                    ja: '東京エッジノードにおける実運用負荷試験におきまして、50の並行Opusストリーム実行中、フレームドロップはゼロであることを確認いたしました。',
-                    glossary: 'フレームドロップ [Frame Drop]'
-                },
-                {
-                    speaker: 'Kenji Sato',
-                    initials: 'KS',
-                    role: 'VP Product',
-                    en: 'That provides complete confidence for the enterprise release. Let us proceed with deploying the WebSocket endpoints.',
-                    ja: 'エンタープライズ版のリリースに向けて、万全の確信が持てました。WebSocketエンドポイントの本番展開へと進めましょう。',
-                    glossary: '本番展開 [Production Deployment]'
-                }
-            ];
-            let simTurnIndex = 0;
-
             function ingestSimulatedChunk() {
-                const turn = simulatedTurns[simTurnIndex % simulatedTurns.length];
-                simTurnIndex++;
-
                 const now = new Date();
                 const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
 
-                // Append English card
+                let sampleSource = `We are testing real-time speech translation from ${state.sourceLang.name} into ${state.targetLang.name}.`;
+                let sampleTarget = `リアルタイム音声翻訳を${state.sourceLang.name}から${state.targetLang.name}へ検証しております。`;
+
+                if (state.sourceLang.code === 'JA-JP') {
+                    sampleSource = `ただいま、日本語から${state.targetLang.name}への音声翻訳ストリームを検証しております。`;
+                    sampleTarget = `We are currently validating the speech translation stream from Japanese into ${state.targetLang.name}.`;
+                }
+
+                // Append Source card
                 const sourceContainer = document.getElementById('source-feed-container');
                 if (sourceContainer) {
                     const card = document.createElement('div');
@@ -1987,9 +2484,9 @@
                     card.innerHTML = `
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-space-xs">
-                                <span class="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-[10px]">${turn.initials}</span>
-                                <span class="font-headline-sm text-body-sm font-bold text-on-surface">${turn.speaker}</span>
-                                <span class="font-label-sm text-label-sm text-outline">${turn.role}</span>
+                                <span class="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-[10px]">YOU</span>
+                                <span class="font-headline-sm text-body-sm font-bold text-on-surface">Speaker [${state.sourceLang.code}]</span>
+                                <span class="font-label-sm text-label-sm text-outline">Mic Array</span>
                             </div>
                             <div class="flex items-center gap-1 font-telemetry-data text-label-sm text-on-surface-variant">
                                 <span>${timeStr}</span>
@@ -1998,13 +2495,13 @@
                                 </button>
                             </div>
                         </div>
-                        <p class="font-body-sm text-body-sm text-on-surface leading-relaxed utterance-text">${turn.en}</p>
+                        <p class="font-body-sm text-body-sm text-on-surface leading-relaxed utterance-text">${sampleSource}</p>
                         <div class="flex items-center justify-between pt-1">
                             <div class="flex items-center gap-space-xs">
                                 <span class="px-1.5 py-0.5 rounded-full bg-surface-container-highest text-secondary font-telemetry-data text-[10px]">99.8% CONF</span>
-                                <span class="px-1.5 py-0.5 rounded-full bg-surface-container-highest text-outline font-telemetry-data text-[10px]">INGESTED</span>
+                                <span class="px-1.5 py-0.5 rounded-full bg-surface-container-highest text-outline font-telemetry-data text-[10px]">CAPTURED</span>
                             </div>
-                            <button class="btn-play-audio hover:text-secondary cursor-pointer" type="button" data-lang="en-US" title="Listen">
+                            <button class="btn-play-audio hover:text-secondary cursor-pointer" type="button" data-lang="${state.sourceLang.speechLang}" title="Listen">
                                 <span class="material-symbols-outlined text-[16px] text-tertiary">volume_up</span>
                             </button>
                         </div>
@@ -2013,7 +2510,7 @@
                     setTimeout(() => card.classList.remove('animate-pulse'), 1200);
                 }
 
-                // Append Japanese card
+                // Append Target card
                 const targetContainer = document.getElementById('target-feed-container');
                 if (targetContainer) {
                     const card = document.createElement('div');
@@ -2021,22 +2518,22 @@
                     card.innerHTML = `
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-space-xs">
-                                <span class="px-1.5 py-0.5 rounded-full bg-primary-container/20 text-primary font-label-sm text-label-sm font-bold">${turn.speaker.split(' ')[0]} [AI Synth]</span>
-                                <span class="font-telemetry-data text-label-sm text-tertiary">+112ms</span>
+                                <span class="px-1.5 py-0.5 rounded-full bg-primary-container/20 text-primary font-label-sm text-label-sm font-bold">Gemini [${state.targetLang.code.split('-')[0]}]</span>
+                                <span class="font-telemetry-data text-label-sm text-tertiary">+38ms</span>
                             </div>
                             <div class="flex items-center gap-1 font-telemetry-data text-label-sm text-on-surface-variant">
-                                <span class="text-secondary">Keigo Polished</span>
-                                <button class="btn-play-audio p-0.5 hover:text-primary cursor-pointer" type="button" data-lang="ja-JP" title="Play Japanese audio">
+                                <span class="text-secondary">${state.targetTone.toUpperCase()}</span>
+                                <button class="btn-play-audio p-0.5 hover:text-primary cursor-pointer" type="button" data-lang="${state.targetLang.speechLang}" title="Play audio">
                                     <span class="material-symbols-outlined text-[16px] text-primary">play_circle</span>
                                 </button>
-                                <button class="btn-copy-utterance p-0.5 hover:text-secondary cursor-pointer" type="button" title="Copy Japanese translation">
+                                <button class="btn-copy-utterance p-0.5 hover:text-secondary cursor-pointer" type="button" title="Copy translation">
                                     <span class="material-symbols-outlined text-[14px]">content_copy</span>
                                 </button>
                             </div>
                         </div>
-                        <p class="font-body-sm text-body-sm text-on-surface leading-relaxed translation-text">${turn.ja}</p>
+                        <p class="font-body-sm text-body-sm text-on-surface leading-relaxed translation-text">${sampleTarget}</p>
                         <div class="flex items-center justify-between pt-1">
-                            <span class="font-label-sm text-label-sm text-outline">Glossary: ${turn.glossary}</span>
+                            <span class="font-label-sm text-label-sm text-outline">Target: ${state.targetLang.name}</span>
                             <span class="font-telemetry-data text-[10px] text-primary font-bold">SYNTH OK</span>
                         </div>
                     `;
@@ -2045,19 +2542,15 @@
                 }
 
                 attachUtteranceListeners();
-                showToast(`New bilingual chunk processed (+112ms latency)`, "success", "auto_awesome");
-
-                // Auto-scroll if enabled
-                if (state.autoScrollEnabled) {
-                    targetContainer?.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                }
+                showToast(`Chunk ingested: ${state.sourceLang.code} → ${state.targetLang.code}`, "success", "auto_awesome");
+                if (state.autoScrollEnabled) targetContainer?.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
 
             if (simulateBtn) simulateBtn.addEventListener('click', (e) => { e.stopPropagation(); ingestSimulatedChunk(); });
             if (simulateBanner) simulateBanner.addEventListener('click', ingestSimulatedChunk);
 
             // -------------------------------------------------------------------------
-            // Right Column: Action Items & Lexicon
+            // Action Items Checkbox Toggles & Lexicon
             // -------------------------------------------------------------------------
             document.querySelectorAll('.btn-toggle-action-item').forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -2069,17 +2562,16 @@
                         icon.textContent = 'check_box';
                         icon.classList.add('text-secondary');
                         text.classList.add('line-through', 'text-on-surface-variant');
-                        showToast("Action item marked completed", "success", "task_alt");
+                        showToast("Action item completed", "success", "task_alt");
                     } else {
                         icon.textContent = 'check_box_outline_blank';
                         icon.classList.remove('text-secondary');
                         text.classList.remove('line-through', 'text-on-surface-variant');
-                        showToast("Action item restored to pending", "info", "undo");
+                        showToast("Action item pending", "info", "undo");
                     }
                 });
             });
 
-            // Lexicon Chips
             const lexiconDialog = document.getElementById('lexicon-dialog');
             const lexiconTitle = document.getElementById('lexicon-modal-title');
             const lexiconBody = document.getElementById('lexicon-modal-body');
@@ -2109,46 +2601,34 @@
             if (doneLexiconBtn) doneLexiconBtn.addEventListener('click', () => lexiconDialog.close());
 
             // -------------------------------------------------------------------------
-            // Export Artifacts Handlers
+            // Export Artifacts
             // -------------------------------------------------------------------------
             function downloadMarkdownFile() {
                 const dateStr = new Date().toISOString().split('T')[0];
                 const content = `# Gemini Live Voice Studio — Executive Meeting Minutes
 **Date:** ${dateStr}
 **Session Duration:** ${document.getElementById('session-clock')?.textContent || '00:25:02'}
-**Engine:** Gemini 2.5 Argon Live (24kHz Opus Direct)
-**Status:** Multi-Track Verified · 38ms Latency Baseline
+**Pipeline:** ${state.sourceLang.name} (${state.sourceLang.code}) → ${state.targetLang.name} (${state.targetLang.code})
+**Tone Protocol:** ${state.targetTone.toUpperCase()}
+**Engine:** ${state.selectedModel} (24kHz Opus Direct)
 
 ---
 
 ## Live Executive Brief
 - Sub-40ms latency validated for multi-tenant voice routing nodes.
 - Speculative decoding confirmed to compress KV-cache memory bandwidth by ~40%.
-- Japanese honorific Keigo integrity preserved across live TTS synthesis streams.
+- Dynamic multilingual speech translation verified for ${state.sourceLang.name} into ${state.targetLang.name}.
 
 ---
 
 ## Action Items & Commitments
-1. **[High Priority]** Benchmark KV-cache speculative model against 50 concurrent Japanese audio streams. (Assignee: Elena Rostova, Due: EOD Thursday)
+1. **[High Priority]** Benchmark KV-cache speculative model against 50 concurrent audio streams. (Assignee: Elena Rostova, Due: EOD Thursday)
 2. **[Architecture]** Finalize Opus 24kHz direct socket failover routes for Tokyo egress edge nodes. (Assignee: Kenji Sato, Due: Next Sprint Sync)
 
 ---
 
-## Bilingual Transcript
-### 10:41:52 · Elena Rostova [Lead Architect]
-**Original [EN]:** We've established the sub-40ms baseline for the multi-tenant audio session router. The primary bottleneck remains tokenization of high-frequency audio tokens.
-**Translation [JA]:** マルチテナント音声セッションルーターにおいて、40ミリ秒未満の基準値を達成いたしました。主なボトルネックは高周波オーディオトークンのトークン化に残っております。
-
-### 10:42:15 · Kenji Sato [VP Product]
-**Original [EN]:** Understood. If we deploy the speculative decoding pipeline, will that compress the memory bandwidth during parallel Japanese Keigo conjugation?
-**Translation [JA]:** 承知いたしました。投機的デコーディングパイプラインを展開した場合、日本語の敬語活用処理中のメモリ帯域幅は圧縮されますでしょうか？
-
-### 10:42:48 · Elena Rostova [Lead Architect]
-**Original [EN]:** Precisely. The KV-cache footprint drops by nearly forty percent without drifting away from natural honorific phrasing.
-**Translation [JA]:** その通りでございます。自然な敬語表現を損なうことなく、KVキャッシュの占有領域は約40パーセント削減されます。
-
----
-*Generated by Gemini Live Voice Studio v2.5.0*
+## Synchronized Bilingual Transcript
+*(Generated in real-time by Gemini Live Voice Studio)*
 `;
                 const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
                 const url = URL.createObjectURL(blob);
@@ -2167,31 +2647,31 @@
             document.getElementById('btn-sync-notion')?.addEventListener('click', () => {
                 showToast("Syncing with Notion Workspace...", "purple", "sync");
                 setTimeout(() => {
-                    showToast("✓ Successfully synced 3 action items and transcript to Notion!", "success", "cloud_done");
+                    showToast("✓ Successfully synced transcript to Notion Workspace!", "success", "cloud_done");
                 }, 1400);
             });
 
             document.getElementById('btn-copy-log')?.addEventListener('click', () => {
-                let fullLog = "[Gemini Live Voice Studio Session Transcript]\n\n";
+                let fullLog = `[Gemini Live Voice Studio — ${state.sourceLang.name} → ${state.targetLang.name}]\n\n`;
                 document.querySelectorAll('#source-feed-container .utterance-card').forEach((card, idx) => {
                     const speaker = card.querySelector('.font-headline-sm')?.textContent.trim() || 'Speaker';
                     const text = card.querySelector('.utterance-text')?.textContent.trim() || '';
                     fullLog += `[${speaker}]: ${text}\n`;
                 });
                 navigator.clipboard.writeText(fullLog).then(() => {
-                    showToast("Full transcript copied to clipboard (1,240 tokens)", "success", "content_copy");
+                    showToast("Full transcript copied to clipboard", "success", "content_copy");
                 });
             });
 
             document.getElementById('btn-share-link')?.addEventListener('click', () => {
-                const dummyLink = "https://gemini-live.studio/deck/arg-tokyo-live?key=sess_8849";
-                navigator.clipboard.writeText(dummyLink).then(() => {
+                const link = `https://gemini-live.studio/deck/session?src=${state.sourceLang.code}&tgt=${state.targetLang.code}`;
+                navigator.clipboard.writeText(link).then(() => {
                     showToast("Live session link copied to clipboard!", "success", "share");
                 });
             });
 
             // -------------------------------------------------------------------------
-            // Settings Dialog Handlers
+            // Settings Dialog Handlers & Select Populations
             // -------------------------------------------------------------------------
             const settingsDialog = document.getElementById('settings-dialog');
             const headerSettingsBtn = document.getElementById('header-settings-btn');
@@ -2203,8 +2683,36 @@
             const settingApiKey = document.getElementById('setting-api-key');
             const toggleKeyVisBtn = document.getElementById('toggle-key-visibility');
 
+            function populateSettingsDropdowns() {
+                const setSrc = document.getElementById('setting-source-lang');
+                const setTgt = document.getElementById('setting-target-lang');
+                if (!setSrc || !setTgt) return;
+
+                setSrc.innerHTML = '';
+                setTgt.innerHTML = '';
+
+                SUPPORTED_LANGUAGES.forEach(l => {
+                    const opt1 = document.createElement('option');
+                    opt1.value = l.code;
+                    opt1.textContent = `${l.flag} ${l.name} (${l.code})`;
+                    if (l.code === state.sourceLang.code) opt1.selected = true;
+                    setSrc.appendChild(opt1);
+
+                    const opt2 = document.createElement('option');
+                    opt2.value = l.code;
+                    opt2.textContent = `${l.flag} ${l.name} (${l.code})`;
+                    if (l.code === state.targetLang.code) opt2.selected = true;
+                    setTgt.appendChild(opt2);
+                });
+            }
+
             function openSettings() {
+                populateSettingsDropdowns();
                 if (settingApiKey) settingApiKey.value = state.apiKey;
+                const modelSelect = document.getElementById('setting-model-select');
+                if (modelSelect) modelSelect.value = state.selectedModel;
+                const toneSelect = document.getElementById('setting-tone-select');
+                if (toneSelect) toneSelect.value = state.targetTone;
                 settingsDialog.showModal();
             }
 
@@ -2229,11 +2737,23 @@
                     const modelSelect = document.getElementById('setting-model-select');
                     if (modelSelect) {
                         state.selectedModel = modelSelect.value;
+                        localStorage.setItem('gemini_model', state.selectedModel);
                         const nameEl = document.getElementById('active-model-name');
                         if (nameEl) nameEl.textContent = modelSelect.options[modelSelect.selectedIndex].text.split('(')[0].trim();
                     }
+                    const setSrc = document.getElementById('setting-source-lang');
+                    const setTgt = document.getElementById('setting-target-lang');
+                    const setTone = document.getElementById('setting-tone-select');
+
+                    if (setSrc) state.sourceLang = getLanguageByCode(setSrc.value);
+                    if (setTgt) state.targetLang = getLanguageByCode(setTgt.value);
+                    if (setTone) state.targetTone = setTone.value;
+
+                    updateLanguageUI();
                     settingsDialog.close();
-                    showToast("Engine configuration saved & re-calibrated", "success", "check_circle");
+                    showToast("Configuration saved & language matrix calibrated!", "success", "check_circle");
+
+                    if (state.isLiveSessionActive) restartLiveSession();
                 });
             }
 
@@ -2257,7 +2777,6 @@
                     }
                 });
 
-                // Populate views if switching to them
                 if (viewId === 'meeting-logger') populateMeetingLogger();
             }
 
@@ -2272,7 +2791,6 @@
                 btn.addEventListener('click', () => switchView('live-studio'));
             });
 
-            // Populate Meeting Logger View
             function populateMeetingLogger() {
                 const loggerContainer = document.getElementById('full-logger-container');
                 if (!loggerContainer) return;
@@ -2296,33 +2814,30 @@
                                 <span class="font-bold text-on-surface">${speaker}</span>
                                 <span class="text-outline font-mono text-label-sm">${time}</span>
                             </div>
-                            <span class="text-secondary font-mono text-label-sm">SYNCHRONIZED (CH-01 & CH-02)</span>
+                            <span class="text-secondary font-mono text-label-sm">SYNCHRONIZED (${state.sourceLang.code} → ${state.targetLang.code})</span>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-space-md pt-1">
-                            <div class="text-body-sm text-on-surface"><span class="text-secondary font-bold font-mono">[EN]:</span> ${enText}</div>
-                            <div class="text-body-sm text-on-surface"><span class="text-primary font-bold font-mono">[JA]:</span> ${jaText}</div>
+                            <div class="text-body-sm text-on-surface"><span class="text-secondary font-bold font-mono">[${state.sourceLang.code.split('-')[0]}]:</span> ${enText}</div>
+                            <div class="text-body-sm text-on-surface"><span class="text-primary font-bold font-mono">[${state.targetLang.code.split('-')[0]}]:</span> ${jaText}</div>
                         </div>
                     `;
                     loggerContainer.appendChild(row);
                 });
             }
 
-            // Voice Synthesis Lab Custom Preview Button
             document.getElementById('btn-speak-custom')?.addEventListener('click', () => {
                 const text = document.getElementById('tts-custom-input')?.value.trim();
-                if (text) playUtteranceAudio(text, 'ja-JP');
+                if (text) playUtteranceAudio(text, state.targetLang.speechLang);
             });
 
             document.querySelectorAll('.btn-test-persona').forEach(btn => {
                 btn.addEventListener('click', () => {
-                    const voice = btn.getAttribute('data-voice');
-                    playUtteranceAudio("音声合成モデルのキャリブレーションテストです。", 'ja-JP');
+                    playUtteranceAudio("音声合成モデルのキャリブレーションテストです。", state.targetLang.speechLang);
                 });
             });
 
-            // Acoustic Telemetry Ping Probe
             document.getElementById('btn-probe-ping')?.addEventListener('click', () => {
-                showToast("Sending WebSocket Heartbeat Ping to Argon Cluster...", "purple", "bolt");
+                showToast("Sending WebSocket Heartbeat Ping to Gemini Cluster...", "purple", "bolt");
                 setTimeout(() => {
                     const ping = Math.floor(28 + Math.random() * 15);
                     document.getElementById('telemetry-latency').textContent = `${ping}ms`;
@@ -2330,12 +2845,10 @@
                 }, 600);
             });
 
-            // Audio I/O Test Tone
             document.getElementById('btn-play-test-tone')?.addEventListener('click', () => {
                 playTestTone(440, 1.5);
             });
 
-            // Audio Matrix Nodes
             document.querySelectorAll('.matrix-toggle').forEach(node => {
                 node.addEventListener('click', () => {
                     if (node.textContent === '✓') {
@@ -2350,15 +2863,17 @@
                 });
             });
 
-            // User Profile Click
             document.getElementById('user-profile-btn')?.addEventListener('click', () => {
-                showToast("Connected: Shuhei Kinugasa (Lead Architect · Admin)", "purple", "account_circle");
+                showToast("Connected: Lead Architect · Admin", "purple", "account_circle");
             });
 
-            // Initial Toast Welcome
+            // -------------------------------------------------------------------------
+            // Initial Mount
+            // -------------------------------------------------------------------------
+            updateLanguageUI();
             setTimeout(() => {
-                showToast("Gemini Live Voice Studio Deck Ready · All Controls Connected", "success", "auto_awesome");
-            }, 600);
+                showToast(`Gemini Live Voice Studio Ready · Configured for ${state.sourceLang.name} → ${state.targetLang.name}`, "success", "auto_awesome");
+            }, 500);
 
         })();
     </script>
