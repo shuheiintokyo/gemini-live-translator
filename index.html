@@ -51,9 +51,8 @@
     class="bg-surface text-on-surface font-body-md text-body-md antialiased selection:bg-primary-container selection:text-on-primary">
     <header class="fixed top-0 left-0 right-0 h-16 z-50 bg-[#0b0f19]/90 backdrop-blur-2xl border-b border-white/[0.08]">
         <div class="w-full h-16 px-gutter flex items-center justify-between gap-space-md">
-            <div class="flex items-center gap-space-md shrink-0"><img alt="Gemini Live Voice Logo"
-                    class="h-8 w-auto object-contain"
-                    src="https://lh3.googleusercontent.com/aida/AEtjO1UNcTNXo8n3X9uJGpBfCWxjXN615atJwPQexJnLYTMKvsjLf4rpyFRW_c6is5o3Yh4o5YBEO8NU9vJy04A9wF6axzGUAOawDdw_rGVTyUXgFjTstvtw3eUdKxn-N_ymLrkQ4tQ3KeyvkWPc5jKmuVgAJHtJ7D9K2VWfKRxLtlU0Avn8469McdmSmGfWPt3NNtNAx8FfjPX-CYTmYXu7HM-MVk8fEDqeFytaLArdGzU" />
+            <div class="flex items-center gap-space-sm shrink-0">
+                <span class="material-symbols-outlined text-[28px] text-primary">auto_awesome</span>
                 <div class="flex flex-col"><span
                         class="font-headline-sm text-headline-sm font-semibold tracking-tight text-on-surface leading-none">Gemini
                         Live Voice Studio</span><span
@@ -95,11 +94,6 @@
                         Active</span></button><button
                     class="p-1.5 rounded-full bg-surface-container-low hover:bg-surface-container-high hover:text-on-surface text-on-surface-variant transition-colors border border-white/[0.05]"
                     type="button"><span class="material-symbols-outlined text-[20px]">tune</span></button>
-                <div class="h-6 w-px bg-outline-variant/40"></div>
-                <div class="flex items-center gap-space-xs pl-space-xs"><img alt="Profile"
-                        class="w-8 h-8 rounded-full object-cover ring-1 ring-primary/40"
-                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuCjkhfRI_kSdwnRqUDYWpYlVQZxwl47T_L1U-pQgj5UYXSd2b-cT6oejlbAa7coQv4wKokFqFpFZETULZZpg47iKPn1GiyHwQP14nL_F3J1rMyOHKrXqFZOslMRuZarPb898DB7Tf8cy8B8cgqK7JYQgVih2Q-C8LTRNyA0Wwu5f3Vwbkj_8qfO-lQUuDXW8Lv95Pb6O3A4tLBuJvZ2C1m4xUkFN9cLYOD-a84HoPc" /><span
-                        class="material-symbols-outlined text-[16px] text-on-surface-variant">expand_more</span></div>
             </div>
         </div>
     </header>
@@ -111,9 +105,9 @@
                     Deck</span><span class="font-label-sm text-label-sm text-secondary">v2.5.0</span></div>
             <nav class="flex flex-col gap-space-xs"
                 data-active-classes="bg-primary-container text-on-primary-container font-bold rounded-full shadow-[0_0_20px_-4px_rgba(160,120,255,0.4)]">
-                <a aria-current="page"
-                    class="flex items-center gap-space-sm px-space-md py-2.5 transition-all bg-primary-container text-on-primary-container font-bold rounded-full shadow-[0_0_20px_-4px_rgba(160,120,255,0.4)]"
-                    data-path="live-studio" href="#"><span
+                <a id="live-studio-btn" aria-current="page"
+                    class="flex items-center gap-space-sm px-space-md py-2.5 transition-all bg-primary-container text-on-primary-container font-bold rounded-full shadow-[0_0_20px_-4px_rgba(160,120,255,0.4)] cursor-pointer"
+                    data-path="live-studio"><span
                         class="material-symbols-outlined text-[20px]">settings_voice</span><span
                         class="font-headline-sm text-body-md font-medium">Live Studio</span></a><a
                     class="flex items-center gap-space-sm px-space-md py-2.5 rounded-full text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all"
@@ -362,6 +356,8 @@
         let isSessionActive = false;
 
         async function toggleLiveSession() {
+            console.log("Toggle Live Session triggered...");
+
             if (isSessionActive) {
                 if (ws) ws.close();
                 if (audioContext) audioContext.close();
@@ -380,18 +376,19 @@
             // 2. Connect via WebSockets using Gemini Live API v1beta endpoint
             const url = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${apiKey}`;
 
+            console.log("Connecting to WebSocket...");
             try {
                 ws = new WebSocket(url);
             } catch (err) {
-                console.error("WebSocket Connection Failed:", err);
+                console.error("WebSocket Creation Failed:", err);
                 return;
             }
 
             ws.onopen = async () => {
-                console.log("Connected to Gemini Live API");
+                console.log("Connected to Gemini Live API via WebSocket!");
                 isSessionActive = true;
 
-                // 3. Send setup message for the model
+                // 3. Send setup message for Gemini 4 Argon model
                 const setupMsg = {
                     setup: {
                         model: "models/gemini-4-argon",
@@ -421,7 +418,7 @@
                         if (ws.readyState !== WebSocket.OPEN) return;
                         const inputData = e.inputBuffer.getChannelData(0);
 
-                        // Convert to 16-bit PCM Base64
+                        // Convert Float32Array to 16-bit PCM Base64
                         const pcm16 = new Int16Array(inputData.length);
                         for (let i = 0; i < inputData.length; i++) {
                             pcm16[i] = Math.max(-1, Math.min(1, inputData[i])) * 0x7FFF;
@@ -437,10 +434,11 @@
 
                     source.connect(processor);
                     processor.connect(audioContext.destination);
+                    console.log("Microphone streaming active.");
                     alert("Connected! Live translation session is active.");
                 } catch (micErr) {
                     alert("Microphone permission denied or unavailable.");
-                    console.error(micErr);
+                    console.error("Mic Error:", micErr);
                 }
             };
 
@@ -449,7 +447,7 @@
                 if (data.serverContent?.modelTurn?.parts) {
                     data.serverContent.modelTurn.parts.forEach(part => {
                         if (part.text) {
-                            console.log("Translation:", part.text);
+                            console.log("Translation Output:", part.text);
                         }
                     });
                 }
@@ -462,14 +460,17 @@
             };
         }
 
-        // Bind button clicks
+        // Bind button click directly to the ID
         document.addEventListener("DOMContentLoaded", () => {
-            const liveStudioBtn = document.querySelector("aside nav a[data-path='live-studio']") || document.querySelector("button");
-            if (liveStudioBtn) {
-                liveStudioBtn.addEventListener("click", (e) => {
+            const btn = document.getElementById("live-studio-btn");
+            if (btn) {
+                btn.addEventListener("click", (e) => {
                     e.preventDefault();
                     toggleLiveSession();
                 });
+                console.log("Live Studio button bound successfully.");
+            } else {
+                console.error("Live Studio button not found!");
             }
         });
     </script>
