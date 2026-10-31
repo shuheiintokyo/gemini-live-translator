@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <meta content="web_dashboard" name="shell-type" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=Space+Mono:ital,wght@0,400;0,700;1,400&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <style>
+        @layer base {
+
+            html,
+            body {
+                margin: 0;
+                padding: 0;
+            }
+
+            body {
+                overscroll-behavior: none;
+            }
+
+            main>:first-child {
+                margin-top: 0 !important;
+            }
+
+            main>:last-child {
+                margin-bottom: 0 !important;
+            }
+        }
+
+        ::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script
+        id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-primary": "#3c0091", "tertiary": "#7bd0ff", "on-secondary-fixed-variant": "#004e5c", "on-background": "#dfe2f1", "secondary-container": "#03b5d3", "on-primary-fixed": "#23005c", "outline-variant": "#494454", "secondary-fixed-dim": "#4cd7f6", "on-error-container": "#ffdad6", "inverse-primary": "#6d3bd7", "tertiary-container": "#009bd1", "surface": "#0f131d", "primary-fixed": "#e9ddff", "secondary-fixed": "#acedff", "secondary": "#4cd7f6", "inverse-on-surface": "#2c303b", "surface-bright": "#353944", "primary-fixed-dim": "#d0bcff", "on-tertiary": "#00354a", "background": "#0f131d", "on-secondary": "#003640", "on-primary-fixed-variant": "#5516be", "surface-variant": "#313540", "on-secondary-fixed": "#001f26", "tertiary-fixed": "#c4e7ff", "on-surface-variant": "#cbc3d7", "primary": "#d0bcff", "outline": "#958ea0", "on-surface": "#dfe2f1", "surface-container": "#1c1f2a", "surface-container-highest": "#313540", "surface-container-lowest": "#0a0e18", "on-tertiary-container": "#002d40", "on-error": "#690005", "on-tertiary-fixed-variant": "#004c69", "surface-container-high": "#262a35", "on-secondary-container": "#00424e", "inverse-surface": "#dfe2f1", "error": "#ffb4ab", "error-container": "#93000a", "on-primary-container": "#340080", "surface-dim": "#0f131d", "surface-tint": "#d0bcff", "surface-container-low": "#171b26", "primary-container": "#a078ff", "tertiary-fixed-dim": "#7bd0ff", "on-tertiary-fixed": "#001e2c" }, borderRadius: { DEFAULT: "1rem", lg: "2rem", xl: "3rem", full: "9999px" }, spacing: { "space-sm": "0.5rem", "space-xs": "0.25rem", "space-md": "1rem", "gutter-mobile": "0.75rem", gutter: "1.25rem", "space-lg": "1.5rem", "margin-mobile": "1rem", "space-xl": "2.5rem", margin: "2rem" }, fontFamily: { "body-lg": ["Space Mono"], "body-sm": ["Space Mono"], "label-sm": ["Space Mono"], "label-md": ["Space Mono"], "headline-lg": ["Space Grotesk"], "headline-sm": ["Space Grotesk"], "label-lg": ["Space Mono"], "headline-lg-mobile": ["Space Grotesk"], "telemetry-data": ["Space Mono"], "display-hero": ["Space Grotesk"], "headline-md": ["Space Grotesk"], "body-md": ["Space Mono"], "display-hero-mobile": ["Space Grotesk"] }, fontSize: { "body-lg": ["16px", { lineHeight: "26px", letterSpacing: "-0.01em", fontWeight: "400" }], "body-sm": ["12px", { lineHeight: "18px", letterSpacing: "0.01em", fontWeight: "400" }], "label-sm": ["10px", { lineHeight: "14px", letterSpacing: "0.1em", fontWeight: "700" }], "label-md": ["11px", { lineHeight: "16px", letterSpacing: "0.08em", fontWeight: "700" }], "headline-lg": ["32px", { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "600" }], "headline-sm": ["18px", { lineHeight: "24px", letterSpacing: "0em", fontWeight: "500" }], "label-lg": ["13px", { lineHeight: "18px", letterSpacing: "0.06em", fontWeight: "700" }], "headline-lg-mobile": ["26px", { lineHeight: "34px", letterSpacing: "-0.02em", fontWeight: "600" }], "telemetry-data": ["13px", { lineHeight: "16px", letterSpacing: "0.04em", fontWeight: "400" }], "display-hero": ["56px", { lineHeight: "64px", letterSpacing: "-0.04em", fontWeight: "700" }], "headline-md": ["22px", { lineHeight: "28px", letterSpacing: "-0.01em", fontWeight: "600" }], "body-md": ["14px", { lineHeight: "22px", letterSpacing: "0em", fontWeight: "400" }], "display-hero-mobile": ["36px", { lineHeight: "44px", letterSpacing: "-0.03em", fontWeight: "700" }] } } } };</script>
+</head>
+
+<body
+    class="bg-surface text-on-surface font-body-md text-body-md antialiased selection:bg-primary-container selection:text-on-primary">
+    <header class="fixed top-0 left-0 right-0 h-16 z-50 bg-[#0b0f19]/90 backdrop-blur-2xl border-b border-white/[0.08]">
+        <div class="w-full h-16 px-gutter flex items-center justify-between gap-space-md">
+            <div class="flex items-center gap-space-md shrink-0"><img alt="Gemini Live Voice Logo"
+                    class="h-8 w-auto object-contain"
+                    src="https://lh3.googleusercontent.com/aida/AEtjO1UNcTNXo8n3X9uJGpBfCWxjXN615atJwPQexJnLYTMKvsjLf4rpyFRW_c6is5o3Yh4o5YBEO8NU9vJy04A9wF6axzGUAOawDdw_rGVTyUXgFjTstvtw3eUdKxn-N_ymLrkQ4tQ3KeyvkWPc5jKmuVgAJHtJ7D9K2VWfKRxLtlU0Avn8469McdmSmGfWPt3NNtNAx8FfjPX-CYTmYXu7HM-MVk8fEDqeFytaLArdGzU" />
+                <div class="flex flex-col"><span
+                        class="font-headline-sm text-headline-sm font-semibold tracking-tight text-on-surface leading-none">Gemini
+                        Live Voice Studio</span><span
+                        class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest mt-1">Real-Time
+                        Bi-Directional Speech-to-Speech Engine</span></div>
+                <div class="h-6 w-px bg-outline-variant/40 mx-space-xs hidden xl:block"></div>
+                <div
+                    class="hidden xl:flex items-center gap-space-xs px-space-sm py-1 rounded-full bg-surface-container-high/80 border border-primary/30">
+                    <span class="relative flex h-2 w-2"><span
+                            class="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span><span
+                            class="relative inline-flex rounded-full h-2 w-2 bg-secondary"></span></span><span
+                        class="font-label-md text-label-md text-primary font-bold tracking-wider">Gemini 2.5 Argon
+                        Live</span></div>
+            </div>
+            <div class="hidden lg:flex items-center gap-space-sm shrink-0">
+                <div
+                    class="flex items-center gap-space-xs px-space-sm py-1 rounded-full bg-surface-container-low border border-white/[0.05]">
+                    <span class="h-1.5 w-1.5 rounded-full bg-secondary"></span><span
+                        class="font-label-sm text-label-sm text-on-surface-variant">Configured · Pay-As-You-Go</span>
+                </div>
+                <div
+                    class="flex items-center gap-space-xs px-space-sm py-1 rounded-full bg-surface-container-low border border-white/[0.05]">
+                    <span class="material-symbols-outlined text-[14px] text-tertiary">bolt</span><span
+                        class="font-telemetry-data text-telemetry-data text-on-surface">38ms <span
+                            class="text-on-surface-variant text-label-sm">round-trip</span></span></div>
+                <div
+                    class="flex items-center gap-space-xs px-space-sm py-1 rounded-full bg-surface-container-low border border-white/[0.05]">
+                    <span class="material-symbols-outlined text-[14px] text-primary">graphic_eq</span><span
+                        class="font-telemetry-data text-telemetry-data text-on-surface">24kHz <span
+                            class="text-on-surface-variant text-label-sm">Opus Direct</span></span></div>
+            </div>
+            <div class="flex items-center gap-space-sm shrink-0"><button
+                    class="flex items-center gap-space-xs px-space-sm py-1.5 rounded-full bg-surface-container-high hover:bg-surface-variant hover:text-on-surface text-on-surface-variant transition-colors border border-white/[0.08]"
+                    type="button"><span class="h-2 w-2 rounded-full bg-error animate-pulse"></span><span
+                        class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface">Rec
+                        Active</span></button><button
+                    class="p-1.5 rounded-full bg-surface-container-low hover:bg-surface-container-high hover:text-on-surface text-on-surface-variant transition-colors border border-white/[0.05]"
+                    type="button"><span class="material-symbols-outlined text-[20px]">tune</span></button>
+                <div class="h-6 w-px bg-outline-variant/40"></div>
+                <div class="flex items-center gap-space-xs pl-space-xs"><img alt="Profile"
+                        class="w-8 h-8 rounded-full object-cover ring-1 ring-primary/40"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuCjkhfRI_kSdwnRqUDYWpYlVQZxwl47T_L1U-pQgj5UYXSd2b-cT6oejlbAa7coQv4wKokFqFpFZETULZZpg47iKPn1GiyHwQP14nL_F3J1rMyOHKrXqFZOslMRuZarPb898DB7Tf8cy8B8cgqK7JYQgVih2Q-C8LTRNyA0Wwu5f3Vwbkj_8qfO-lQUuDXW8Lv95Pb6O3A4tLBuJvZ2C1m4xUkFN9cLYOD-a84HoPc" /><span
+                        class="material-symbols-outlined text-[16px] text-on-surface-variant">expand_more</span></div>
+            </div>
+        </div>
+    </header>
+    <aside
+        class="fixed left-0 top-16 bottom-0 w-64 bg-surface-container-lowest border-r border-white/[0.06] z-40 flex flex-col justify-between py-space-md">
+        <div class="flex flex-col gap-space-md px-space-sm">
+            <div class="px-space-sm py-1 flex items-center justify-between"><span
+                    class="font-label-sm text-label-sm uppercase tracking-widest text-outline">Workstation
+                    Deck</span><span class="font-label-sm text-label-sm text-secondary">v2.5.0</span></div>
+            <nav class="flex flex-col gap-space-xs"
+                data-active-classes="bg-primary-container text-on-primary-container font-bold rounded-full shadow-[0_0_20px_-4px_rgba(160,120,255,0.4)]">
+                <a aria-current="page"
+                    class="flex items-center gap-space-sm px-space-md py-2.5 transition-all bg-primary-container text-on-primary-container font-bold rounded-full shadow-[0_0_20px_-4px_rgba(160,120,255,0.4)]"
+                    data-path="live-studio" href="#"><span
+                        class="material-symbols-outlined text-[20px]">settings_voice</span><span
+                        class="font-headline-sm text-body-md font-medium">Live Studio</span></a><a
+                    class="flex items-center gap-space-sm px-space-md py-2.5 rounded-full text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all"
+                    data-path="meeting-logger" href="#"><span
+                        class="material-symbols-outlined text-[20px]">history_edu</span><span
+                        class="font-headline-sm text-body-md font-medium">Meeting Logger</span></a><a
+                    class="flex items-center gap-space-sm px-space-md py-2.5 rounded-full text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all"
+                    data-path="voice-synthesis-profiles" href="#"><span
+                        class="material-symbols-outlined text-[20px]">record_voice_over</span><span
+                        class="font-headline-sm text-body-md font-medium">Voice Synthesis</span></a><a
+                    class="flex items-center gap-space-sm px-space-md py-2.5 rounded-full text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all"
+                    data-path="acoustic-telemetry" href="#"><span
+                        class="material-symbols-outlined text-[20px]">equalizer</span><span
+                        class="font-headline-sm text-body-md font-medium">Acoustic Telemetry</span></a><a
+                    class="flex items-center gap-space-sm px-space-md py-2.5 rounded-full text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all"
+                    data-path="audio-io-matrix" href="#"><span
+                        class="material-symbols-outlined text-[20px]">hub</span><span
+                        class="font-headline-sm text-body-md font-medium">Audio I/O Matrix</span></a></nav>
+        </div>
+        <div class="px-space-sm flex flex-col gap-space-sm">
+            <div class="p-space-sm rounded-lg bg-surface-container-low border border-white/[0.04]">
+                <div class="flex items-center justify-between mb-1"><span
+                        class="font-label-sm text-label-sm text-on-surface-variant uppercase">Buffer Queue</span><span
+                        class="font-telemetry-data text-telemetry-data text-secondary">12ms</span></div>
+                <div class="w-full bg-surface-container-highest h-1 rounded-full overflow-hidden">
+                    <div class="bg-secondary h-full rounded-full w-1/4"></div>
+                </div>
+            </div><a
+                class="flex items-center gap-space-sm px-space-md py-2 rounded-full text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors"
+                data-path="system-settings" href="#"><span
+                    class="material-symbols-outlined text-[20px]">tune</span><span
+                    class="font-body-md text-body-md">Engine Settings</span></a>
+        </div>
+    </aside>
+    <div class="pl-64">
+        <main class="relative w-full pt-16 min-h-screen bg-surface px-gutter">
+            <div class="flex flex-col w-full gap-space-lg pb-space-xl">
+                <!-- 1. TOP STUDIO SESSION CONTROLS & DYNAMIC VISUALIZER RACK -->
+                <section
+                    class="relative w-full rounded-2xl bg-surface-container-low/80 backdrop-blur-xl p-space-md shadow-2xl overflow-hidden">
+                    <!-- Ambient photonic resonance glow -->
+                    <div
+                        class="absolute -top-24 left-1/3 w-96 h-40 bg-gradient-to-r from-primary-container/20 to-secondary/20 blur-3xl pointer-events-none">
+                    </div>
+                    <div
+                        class="relative z-10 flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-space-md">
+                        <!-- Session Badges & Timer -->
+                        <div class="flex flex-wrap items-center gap-space-sm shrink-0">
+                            <div
+                                class="flex items-center gap-space-xs px-space-sm py-1.5 rounded-full bg-surface-container-highest shadow-inner">
+                                <span class="relative flex h-2.5 w-2.5">
+                                    <span
+                                        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-secondary"></span>
+                                </span>
+                                <span
+                                    class="font-label-sm text-label-sm text-secondary tracking-widest uppercase font-bold">LIVE
+                                    TRANSLATION STREAMING</span>
+                            </div>
+                            <div
+                                class="flex items-center gap-space-xs px-space-md py-1.5 rounded-full bg-surface-container-high">
+                                <span class="material-symbols-outlined text-[16px] text-tertiary">timer</span>
+                                <span
+                                    class="font-telemetry-data text-telemetry-data text-on-surface font-bold tracking-wider"
+                                    id="session-clock">00:24:18</span>
+                                <span class="font-label-sm text-label-sm text-on-surface-variant">ELAPSED</span>
+                            </div>
+                            <div
+                                class="flex items-center gap-1.5 px-space-sm py-1 rounded-full bg-surface-container-highest/60 text-on-surface-variant">
+                                <span class="material-symbols-outlined text-[14px] text-primary">sensors</span>
+                                <span class="font-label-sm text-label-sm">CH-01 • DUAL-TRACK ACTIVE</span>
+                            </div>
+                        </div>
+                        <!-- Center Waveform & Spectrum Visualizer Rack -->
+                        <div
+                            class="flex-1 flex flex-col md:flex-row items-center gap-space-md justify-center px-space-sm min-w-0">
+                            <!-- Frequency Bars Visualizer -->
+                            <div
+                                class="w-full max-w-lg h-10 px-space-sm py-1 rounded-full bg-surface-container-lowest/90 flex items-center justify-between gap-0.5 shadow-inner overflow-hidden">
+                                <div class="h-3 w-1 rounded-full bg-primary/40 animate-pulse"></div>
+                                <div class="h-5 w-1 rounded-full bg-primary/60"></div>
+                                <div class="h-7 w-1 rounded-full bg-primary"></div>
+                                <div class="h-9 w-1 rounded-full bg-secondary shadow-[0_0_8px_rgba(76,215,246,0.6)]">
+                                </div>
+                                <div class="h-6 w-1 rounded-full bg-secondary"></div>
+                                <div class="h-4 w-1 rounded-full bg-primary"></div>
+                                <div class="h-8 w-1 rounded-full bg-secondary-fixed"></div>
+                                <div
+                                    class="h-10 w-1 rounded-full bg-primary-container shadow-[0_0_12px_rgba(160,120,255,0.8)]">
+                                </div>
+                                <div class="h-7 w-1 rounded-full bg-secondary"></div>
+                                <div class="h-3 w-1 rounded-full bg-primary/50"></div>
+                                <div class="h-5 w-1 rounded-full bg-secondary/70"></div>
+                                <div class="h-9 w-1 rounded-full bg-primary"></div>
+                                <div class="h-6 w-1 rounded-full bg-secondary"></div>
+                                <div class="h-8 w-1 rounded-full bg-primary-container"></div>
+                                <div class="h-4 w-1 rounded-full bg-primary/60"></div>
+                                <div class="h-7 w-1 rounded-full bg-secondary"></div>
+                                <div
+                                    class="h-10 w-1 rounded-full bg-secondary-container shadow-[0_0_10px_rgba(3,181,211,0.7)]">
+                                </div>
+                                <div class="h-5 w-1 rounded-full bg-primary"></div>
+                                <div class="h-8 w-1 rounded-full bg-secondary"></div>
+                                <div class="h-3 w-1 rounded-full bg-primary/40"></div>
+                                <div class="h-6 w-1 rounded-full bg-primary"></div>
+                                <div class="h-9 w-1 rounded-full bg-secondary shadow-[0_0_8px_rgba(76,215,246,0.6)]">
+                                </div>
+                                <div class="h-5 w-1 rounded-full bg-primary"></div>
+                                <div class="h-7 w-1 rounded-full bg-secondary"></div>
+                                <div class="h-4 w-1 rounded-full bg-primary/50"></div>
+                            </div>
+                            <!-- Real-Time Oscilloscope SVG Spark -->
+                            <div
+                                class="hidden lg:flex items-center gap-space-xs shrink-0 px-space-sm py-1.5 rounded-full bg-surface-container-lowest/80 shadow-inner">
+                                <span
+                                    class="font-label-sm text-label-sm text-outline uppercase tracking-wider">OSC</span>
+                                <svg class="w-24 h-6 text-secondary" fill="none" viewbox="0 0 100 24">
+                                    <path class="opacity-90"
+                                        d="M0 12 Q 10 3, 20 12 T 40 12 T 60 2 T 75 22 T 90 12 T 100 12"
+                                        stroke="currentColor" stroke-linecap="round" stroke-width="1.8"></path>
+                                </svg>
+                                <span class="font-telemetry-data text-label-sm text-secondary font-bold">24.2k</span>
+                            </div>
+                        </div>
+                        <!-- Quick Action Transport Buttons -->
+                        <div class="flex items-center gap-space-xs shrink-0 justify-end">
+                            <button
+                                class="flex items-center gap-space-xs px-space-sm py-2 rounded-full bg-surface-container-high hover:bg-surface-container-highest text-on-surface transition-all shadow-sm"
+                                id="mute-toggle" type="button">
+                                <span class="material-symbols-outlined text-[18px] text-tertiary"
+                                    id="mic-icon">mic</span>
+                                <span class="font-label-md text-label-md">Mute Mic</span>
+                            </button>
+                            <button
+                                class="flex items-center gap-space-xs px-space-sm py-2 rounded-full bg-surface-container-high hover:bg-surface-container-highest text-on-surface transition-all shadow-sm"
+                                type="button">
+                                <span class="material-symbols-outlined text-[18px] text-secondary">pause_circle</span>
+                                <span class="font-label-md text-label-md">Pause</span>
+                            </button>
+                            <button
+                                class="flex items-center gap-space-xs px-space-md py-2 rounded-full bg-primary-container text-on-primary-container hover:bg-primary transition-all shadow-[0_0_16px_-2px_rgba(160,120,255,0.45)]"
+                                type="button">
+                                <span class="material-symbols-outlined text-[18px]">bookmark_add</span>
+                                <span class="font-label-md text-label-md font-bold">Snapshot Key</span>
+                            </button>
+                            <button
+                                class="flex items-center gap-space-xs px-space-sm py-2 rounded-full bg-error-container text-on-error-container hover:bg-error hover:text-on-error transition-all"
+                                type="button">
+                                <span class="material-symbols-outlined text-[18px]">stop_circle</span>
+                                <span class="font-label-md text-label-md">Archive</span>
+                            </button>
+                        </div>
+                    </div>
+                </section>
+                <!-- 3-COLUMN ADAPTIVE STUDIO WORKSPACE -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-md w-full items-start">
+                    <!-- ========================================================================= -->
+                    <!-- 2. LEFT COLUMN: STUDIO CONTROL & HARDWARE PANEL (~320px / 3 Col)           -->
+                    <!-- ========================================================================= -->
+                    <aside class="lg:col-span-3 flex flex-col gap-space-md">
+                        <!-- Language Translation Matrix Card -->
+                        <div
+                            class="rounded-2xl bg-surface-container-low/90 backdrop-blur-md p-space-md flex flex-col gap-space-md shadow-xl">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-space-xs">
+                                    <span class="material-symbols-outlined text-[18px] text-primary">translate</span>
+                                    <span class="font-headline-sm text-body-md font-semibold text-on-surface">Language
+                                        Matrix</span>
+                                </div>
+                                <span
+                                    class="px-space-xs py-0.5 rounded-full bg-primary-container/20 text-primary font-label-sm text-label-sm uppercase">Bi-Directional</span>
+                            </div>
+                            <!-- Source & Target Selector with Swap -->
+                            <div class="flex flex-col gap-space-xs">
+                                <!-- Source -->
+                                <div class="p-space-sm rounded-xl bg-surface-container-high/90 flex flex-col gap-1">
+                                    <div
+                                        class="flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
+                                        <span>SOURCE CHANNEL [IN]</span>
+                                        <span class="text-secondary font-telemetry-data text-label-sm">Auto-Pitch</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="font-headline-sm text-body-md font-bold text-on-surface">English
+                                            (US)</span>
+                                        <span class="font-telemetry-data text-label-sm text-outline">EN-US</span>
+                                    </div>
+                                    <span class="font-label-sm text-label-sm text-on-surface-variant">Realtime Neural
+                                        VAD • Low Jitter</span>
+                                </div>
+                                <!-- Swap Button -->
+                                <div class="flex justify-center -my-2 relative z-20">
+                                    <button
+                                        class="w-8 h-8 rounded-full bg-surface-container-highest hover:bg-secondary hover:text-on-secondary text-primary transition-all flex items-center justify-center shadow-[0_0_12px_rgba(76,215,246,0.3)]"
+                                        type="button">
+                                        <span class="material-symbols-outlined text-[16px]">swap_vert</span>
+                                    </button>
+                                </div>
+                                <!-- Target -->
+                                <div class="p-space-sm rounded-xl bg-surface-container-high/90 flex flex-col gap-1">
+                                    <div
+                                        class="flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
+                                        <span>TARGET SYNTHESIS [OUT]</span>
+                                        <span class="text-primary font-telemetry-data text-label-sm">Keigo Active</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="font-headline-sm text-body-md font-bold text-on-surface">Japanese
+                                            (日本語)</span>
+                                        <span class="font-telemetry-data text-label-sm text-outline">JA-JP</span>
+                                    </div>
+                                    <span class="font-label-sm text-label-sm text-on-surface-variant">Conversational
+                                        Business Polite</span>
+                                </div>
+                            </div>
+                            <!-- Voice Model Timbre & Accent Slider -->
+                            <div class="flex flex-col gap-space-xs pt-space-xs">
+                                <div class="flex items-center justify-between">
+                                    <span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Voice
+                                        Timbre Persona</span>
+                                    <span class="font-telemetry-data text-label-sm text-secondary">Zephyr (Warm)</span>
+                                </div>
+                                <div class="relative w-full flex items-center">
+                                    <div class="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
+                                        <div
+                                            class="h-full bg-gradient-to-r from-secondary to-primary-container rounded-full w-3/4">
+                                        </div>
+                                    </div>
+                                    <div class="absolute left-3/4 -ml-2 w-4 h-4 rounded-full bg-on-surface shadow-md">
+                                    </div>
+                                </div>
+                                <div class="flex justify-between font-label-sm text-label-sm text-outline">
+                                    <span>Sterile Neutral</span>
+                                    <span>Warm Natural</span>
+                                    <span>Authoritative</span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Microphone & Audio Hardware Routing Card -->
+                        <div
+                            class="rounded-2xl bg-surface-container-low/90 backdrop-blur-md p-space-md flex flex-col gap-space-md shadow-xl">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-space-xs">
+                                    <span class="material-symbols-outlined text-[18px] text-secondary">tune</span>
+                                    <span class="font-headline-sm text-body-md font-semibold text-on-surface">Hardware
+                                        Routing</span>
+                                </div>
+                                <span class="font-telemetry-data text-label-sm text-secondary font-bold">24-BIT /
+                                    48kHz</span>
+                            </div>
+                            <!-- Inputs & Outputs -->
+                            <div class="flex flex-col gap-space-xs">
+                                <div class="flex flex-col gap-1">
+                                    <label class="font-label-sm text-label-sm text-on-surface-variant uppercase">Mic
+                                        Input Array</label>
+                                    <div
+                                        class="flex items-center justify-between p-space-sm rounded-full bg-surface-container-high text-on-surface font-body-sm text-body-sm shadow-inner">
+                                        <div class="flex items-center gap-space-xs truncate">
+                                            <span
+                                                class="material-symbols-outlined text-[16px] text-secondary">mic_external_on</span>
+                                            <span class="truncate">Shure SM7B via Scarlett 2i2 USB</span>
+                                        </div>
+                                        <span
+                                            class="material-symbols-outlined text-[16px] text-outline">arrow_drop_down</span>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <label class="font-label-sm text-label-sm text-on-surface-variant uppercase">Monitor
+                                        Return</label>
+                                    <div
+                                        class="flex items-center justify-between p-space-sm rounded-full bg-surface-container-high text-on-surface font-body-sm text-body-sm shadow-inner">
+                                        <div class="flex items-center gap-space-xs truncate">
+                                            <span
+                                                class="material-symbols-outlined text-[16px] text-tertiary">headphones</span>
+                                            <span class="truncate">Studio Monitors (Balanced TRS)</span>
+                                        </div>
+                                        <span
+                                            class="material-symbols-outlined text-[16px] text-outline">arrow_drop_down</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Decibel Peak Meters (L/R) -->
+                            <div
+                                class="p-space-sm rounded-xl bg-surface-container-lowest/80 flex flex-col gap-space-xs">
+                                <div
+                                    class="flex items-center justify-between font-label-sm text-label-sm text-on-surface-variant">
+                                    <span>STEREO PEAK dBFS</span>
+                                    <span class="font-telemetry-data text-label-sm text-primary">-12.4 dBFS</span>
+                                </div>
+                                <!-- L Channel -->
+                                <div class="flex items-center gap-space-xs">
+                                    <span class="font-telemetry-data text-label-sm text-outline w-3">L</span>
+                                    <div
+                                        class="flex-1 h-2 rounded-full bg-surface-container-highest overflow-hidden flex">
+                                        <div class="h-full bg-secondary w-3/5"></div>
+                                        <div class="h-full bg-primary-container w-1/5"></div>
+                                        <div class="h-full bg-transparent w-1/5"></div>
+                                    </div>
+                                    <span
+                                        class="font-telemetry-data text-label-sm text-on-surface-variant w-8 text-right">-8dB</span>
+                                </div>
+                                <!-- R Channel -->
+                                <div class="flex items-center gap-space-xs">
+                                    <span class="font-telemetry-data text-label-sm text-outline w-3">R</span>
+                                    <div
+                                        class="flex-1 h-2 rounded-full bg-surface-container-highest overflow-hidden flex">
+                                        <div class="h-full bg-secondary w-2/3"></div>
+                                        <div class="h-full bg-primary-container w-1/6"></div>
+                                        <div class="h-full bg-transparent w-1/6"></div>
+                                    </div>
+                                    <span
+                                        class="font-telemetry-data text-label-sm text-on-surface-variant w-8 text-right">-6dB</span>
+                                </div>
+                                <div
+                                    class="flex justify-between font-telemetry-data text-[10px] text-outline px-4 pt-0.5">
+                                    <span>-48</span>
+                                    <span>-24</span>
+                                    <span>-12</span>
+                                    <span>-6</span>
+                                    <span class="text-error font-bold">0dB</span>
+                                </div>
+                            </div>
+                            <!-- Gain Slider & Suppression Toggle -->
+                            <div class="flex flex-col gap-space-xs">
+                                <div class="flex items-center justify-between">
+                                    <span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Input
+                                        Preamp Gain</span>
+                                    <span class="font-telemetry-data text-label-sm text-secondary font-bold">+4.5
+                                        dB</span>
+                                </div>
+                                <div class="w-full h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
+                                    <div class="h-full bg-secondary rounded-full w-3/5"></div>
+                                </div>
+                            </div>
+                            <div
+                                class="flex items-center justify-between p-space-sm rounded-xl bg-surface-container-high/80">
+                                <div class="flex items-center gap-space-xs">
+                                    <span
+                                        class="material-symbols-outlined text-[18px] text-secondary">filter_drama</span>
+                                    <div class="flex flex-col">
+                                        <span class="font-label-md text-label-md text-on-surface">DeepFilter AI
+                                            V3</span>
+                                        <span class="font-label-sm text-label-sm text-on-surface-variant">Zero-Latency
+                                            Denoising</span>
+                                    </div>
+                                </div>
+                                <span
+                                    class="px-space-xs py-0.5 rounded-full bg-secondary/20 text-secondary font-label-sm text-label-sm font-bold">ACTIVE</span>
+                            </div>
+                        </div>
+                        <!-- Gemini Live Engine Status Telemetry Card -->
+                        <div
+                            class="rounded-2xl bg-surface-container-low/90 backdrop-blur-md p-space-md flex flex-col gap-space-sm shadow-xl">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-space-xs">
+                                    <span class="material-symbols-outlined text-[18px] text-primary">psychology</span>
+                                    <span class="font-headline-sm text-body-md font-semibold text-on-surface">Engine
+                                        Telemetry</span>
+                                </div>
+                                <span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+                            </div>
+                            <div class="flex flex-col gap-space-xs font-telemetry-data text-label-sm">
+                                <div
+                                    class="flex items-center justify-between p-space-xs rounded-lg bg-surface-container-high">
+                                    <span class="text-on-surface-variant">Core Model</span>
+                                    <span class="text-primary font-bold">Gemini 2.5 Argon Live</span>
+                                </div>
+                                <div
+                                    class="flex items-center justify-between p-space-xs rounded-lg bg-surface-container-high">
+                                    <span class="text-on-surface-variant">Socket Link</span>
+                                    <span class="text-secondary">WebRTC / Opus 24kHz</span>
+                                </div>
+                                <div
+                                    class="flex items-center justify-between p-space-xs rounded-lg bg-surface-container-high">
+                                    <span class="text-on-surface-variant">Round-Trip Latency</span>
+                                    <span class="text-tertiary">32ms Jitter Buffer</span>
+                                </div>
+                                <div
+                                    class="flex items-center justify-between p-space-xs rounded-lg bg-surface-container-high">
+                                    <span class="text-on-surface-variant">Active Quota Pool</span>
+                                    <span class="text-on-surface">84% Available (PayGo)</span>
+                                </div>
+                            </div>
+                            <div
+                                class="pt-space-xs flex items-center justify-between text-outline font-label-sm text-label-sm">
+                                <span>TOKEN REF: sk-live-...9f24</span>
+                                <span class="text-secondary">99.98% Uptime</span>
+                            </div>
+                        </div>
+                    </aside>
+                    <!-- ========================================================================= -->
+                    <!-- 3. CENTER COLUMN: MAIN LIVE FEED & DUAL STREAM TRANSCRIPT (6 Col)          -->
+                    <!-- ========================================================================= -->
+                    <main class="lg:col-span-6 flex flex-col gap-space-md">
+                        <!-- Feed Header Controls Bar -->
+                        <div
+                            class="rounded-2xl bg-surface-container-low/90 backdrop-blur-md p-space-sm flex flex-col sm:flex-row items-center justify-between gap-space-sm shadow-xl">
+                            <!-- View Toggle Pills -->
+                            <div
+                                class="flex items-center gap-1 p-1 rounded-full bg-surface-container-lowest shadow-inner w-full sm:w-auto">
+                                <button
+                                    class="px-space-sm py-1 rounded-full bg-primary-container text-on-primary-container font-label-sm text-label-sm font-bold shadow-sm"
+                                    type="button">Side-by-Side Dual</button>
+                                <button
+                                    class="px-space-sm py-1 rounded-full text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm"
+                                    type="button">Interleaved</button>
+                                <button
+                                    class="px-space-sm py-1 rounded-full text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm"
+                                    type="button">Diarized Only</button>
+                            </div>
+                            <!-- Filter / Search & Auto Scroll -->
+                            <div class="flex items-center gap-space-xs w-full sm:w-auto justify-end">
+                                <div
+                                    class="flex items-center gap-space-xs px-space-sm py-1 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">
+                                    <span class="material-symbols-outlined text-[16px]">filter_list</span>
+                                    <span>Confidence &gt; 95%</span>
+                                </div>
+                                <button
+                                    class="flex items-center gap-space-xs px-space-sm py-1 rounded-full bg-secondary-container/20 text-secondary hover:bg-secondary-container hover:text-on-secondary-container transition-all font-label-sm text-label-sm font-bold"
+                                    type="button">
+                                    <span class="material-symbols-outlined text-[16px]">vertical_align_bottom</span>
+                                    <span>Anchor Auto-Scroll</span>
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Live Stream Containers: Side-by-Side Dual View Grid -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-space-sm">
+                            <!-- LEFT SUB-COLUMN: Original Speech Stream -->
+                            <div class="flex flex-col gap-space-sm">
+                                <div
+                                    class="px-space-sm py-1.5 rounded-full bg-surface-container-high/90 flex items-center justify-between">
+                                    <div class="flex items-center gap-space-xs">
+                                        <span class="w-2 h-2 rounded-full bg-secondary"></span>
+                                        <span
+                                            class="font-headline-sm text-body-sm font-semibold text-on-surface">Cleaned
+                                            Speech [EN]</span>
+                                    </div>
+                                    <span class="font-telemetry-data text-label-sm text-on-surface-variant">INCOMING
+                                        CH-01</span>
+                                </div>
+                                <!-- Transcript Stream Cards -->
+                                <div class="flex flex-col gap-space-sm" id="source-feed-container">
+                                    <!-- Utterance 1 -->
+                                    <div
+                                        class="rounded-xl bg-surface-container-low/95 p-space-sm flex flex-col gap-space-xs shadow-md border-l-2 border-secondary">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-space-xs">
+                                                <span
+                                                    class="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-[10px]">ER</span>
+                                                <span
+                                                    class="font-headline-sm text-body-sm font-bold text-on-surface">Elena
+                                                    Rostova</span>
+                                                <span class="font-label-sm text-label-sm text-outline">Lead
+                                                    Architect</span>
+                                            </div>
+                                            <div
+                                                class="flex items-center gap-1 font-telemetry-data text-label-sm text-on-surface-variant">
+                                                <span>10:41:52</span>
+                                                <button class="p-0.5 hover:text-secondary" type="button"><span
+                                                        class="material-symbols-outlined text-[14px]">content_copy</span></button>
+                                            </div>
+                                        </div>
+                                        <p class="font-body-sm text-body-sm text-on-surface leading-relaxed">
+                                            We've established the sub-40ms baseline for the multi-tenant audio session
+                                            router. The primary bottleneck remains tokenization of high-frequency audio
+                                            tokens.
+                                        </p>
+                                        <div class="flex items-center justify-between pt-1">
+                                            <div class="flex items-center gap-space-xs">
+                                                <span
+                                                    class="px-1.5 py-0.5 rounded-full bg-surface-container-highest text-secondary font-telemetry-data text-[10px]">99.4%
+                                                    CONF</span>
+                                                <span
+                                                    class="px-1.5 py-0.5 rounded-full bg-surface-container-highest text-outline font-telemetry-data text-[10px]">PITCH:
+                                                    LOW-STABLE</span>
+                                            </div>
+                                            <span
+                                                class="material-symbols-outlined text-[14px] text-tertiary">volume_up</span>
+                                        </div>
+                                    </div>
+                                    <!-- Utterance 2 -->
+                                    <div
+                                        class="rounded-xl bg-surface-container-low/95 p-space-sm flex flex-col gap-space-xs shadow-md border-l-2 border-primary-container">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-space-xs">
+                                                <span
+                                                    class="w-5 h-5 rounded-full bg-secondary/20 text-secondary flex items-center justify-center font-bold text-[10px]">KS</span>
+                                                <span
+                                                    class="font-headline-sm text-body-sm font-bold text-on-surface">Kenji
+                                                    Sato</span>
+                                                <span class="font-label-sm text-label-sm text-outline">VP Product</span>
+                                            </div>
+                                            <div
+                                                class="flex items-center gap-1 font-telemetry-data text-label-sm text-on-surface-variant">
+                                                <span>10:42:15</span>
+                                                <button class="p-0.5 hover:text-secondary" type="button"><span
+                                                        class="material-symbols-outlined text-[14px]">content_copy</span></button>
+                                            </div>
+                                        </div>
+                                        <p class="font-body-sm text-body-sm text-on-surface leading-relaxed">
+                                            Understood. If we deploy the speculative decoding pipeline, will that
+                                            compress the memory bandwidth during parallel Japanese Keigo conjugation?
+                                        </p>
+                                        <div class="flex items-center justify-between pt-1">
+                                            <div class="flex items-center gap-space-xs">
+                                                <span
+                                                    class="px-1.5 py-0.5 rounded-full bg-surface-container-highest text-secondary font-telemetry-data text-[10px]">98.9%
+                                                    CONF</span>
+                                                <span
+                                                    class="px-1.5 py-0.5 rounded-full bg-surface-container-highest text-primary font-telemetry-data text-[10px]">QUERY
+                                                    INTONATION</span>
+                                            </div>
+                                            <span
+                                                class="material-symbols-outlined text-[14px] text-tertiary">volume_up</span>
+                                        </div>
+                                    </div>
+                                    <!-- Utterance 3 (Elena Answering) -->
+                                    <div
+                                        class="rounded-xl bg-surface-container-low/95 p-space-sm flex flex-col gap-space-xs shadow-md border-l-2 border-secondary">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-space-xs">
+                                                <span
+                                                    class="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-[10px]">ER</span>
+                                                <span
+                                                    class="font-headline-sm text-body-sm font-bold text-on-surface">Elena
+                                                    Rostova</span>
+                                                <span class="font-label-sm text-label-sm text-outline">Lead
+                                                    Architect</span>
+                                            </div>
+                                            <div
+                                                class="flex items-center gap-1 font-telemetry-data text-label-sm text-on-surface-variant">
+                                                <span>10:42:48</span>
+                                                <button class="p-0.5 hover:text-secondary" type="button"><span
+                                                        class="material-symbols-outlined text-[14px]">content_copy</span></button>
+                                            </div>
+                                        </div>
+                                        <p class="font-body-sm text-body-sm text-on-surface leading-relaxed">
+                                            Precisely. The KV-cache footprint drops by nearly forty percent without
+                                            drifting away from natural honorific phrasing.
+                                        </p>
+                                        <div class="flex items-center justify-between pt-1">
+                                            <div class="flex items-center gap-space-xs">
+                                                <span
+                                                    class="px-1.5 py-0.5 rounded-full bg-surface-container-highest text-secondary font-telemetry-data text-[10px]">99.7%
+                                                    CONF</span>
+                                                <span
+                                                    class="px-1.5 py-0.5 rounded-full bg-surface-container-highest text-secondary font-telemetry-data text-[10px]">CONFIRMED</span>
+                                            </div>
+                                            <span
+                                                class="material-symbols-outlined text-[14px] text-tertiary">volume_up</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- RIGHT SUB-COLUMN: Synchronized Target Stream -->
+                            <div class="flex flex-col gap-space-sm">
+                                <div
+                                    class="px-space-sm py-1.5 rounded-full bg-surface-container-high/90 flex items-center justify-between">
+                                    <div class="flex items-center gap-space-xs">
+                                        <span class="w-2 h-2 rounded-full bg-primary-container"></span>
+                                        <span
+                                            class="font-headline-sm text-body-sm font-semibold text-on-surface">Translated
+                                            Speech [JA]</span>
+                                    </div>
+                                    <span class="font-telemetry-data text-label-sm text-primary">SYNTH CH-02
+                                        (KEIGO)</span>
+                                </div>
+                                <!-- Japanese Translated Stream Cards -->
+                                <div class="flex flex-col gap-space-sm" id="target-feed-container">
+                                    <!-- Translation 1 -->
+                                    <div
+                                        class="rounded-xl bg-surface-container-low/95 p-space-sm flex flex-col gap-space-xs shadow-md border-r-2 border-primary-container">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-space-xs">
+                                                <span
+                                                    class="px-1.5 py-0.5 rounded-full bg-primary-container/20 text-primary font-label-sm text-label-sm font-bold">Elena
+                                                    [AI Synth]</span>
+                                                <span
+                                                    class="font-telemetry-data text-label-sm text-tertiary">+124ms</span>
+                                            </div>
+                                            <div
+                                                class="flex items-center gap-1 font-telemetry-data text-label-sm text-on-surface-variant">
+                                                <span class="text-secondary">Polite Keigo</span>
+                                                <button class="p-0.5 hover:text-primary" type="button"><span
+                                                        class="material-symbols-outlined text-[14px]">play_circle</span></button>
+                                            </div>
+                                        </div>
+                                        <p class="font-body-sm text-body-sm text-on-surface leading-relaxed">
+                                            マルチテナント音声セッションルーターにおいて、40ミリ秒未満の基準値を達成いたしました。主なボトルネックは高周波オーディオトークンのトークン化に残っております。
+                                        </p>
+                                        <div class="flex items-center justify-between pt-1">
+                                            <span class="font-label-sm text-label-sm text-outline">Glossary: トークン化
+                                                [Tokenization]</span>
+                                            <span class="font-telemetry-data text-[10px] text-primary font-bold">TTS
+                                                CACHED</span>
+                                        </div>
+                                    </div>
+                                    <!-- Translation 2 -->
+                                    <div
+                                        class="rounded-xl bg-surface-container-low/95 p-space-sm flex flex-col gap-space-xs shadow-md border-r-2 border-secondary">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-space-xs">
+                                                <span
+                                                    class="px-1.5 py-0.5 rounded-full bg-secondary/20 text-secondary font-label-sm text-label-sm font-bold">Kenji
+                                                    [Original/Echo]</span>
+                                                <span
+                                                    class="font-telemetry-data text-label-sm text-tertiary">+138ms</span>
+                                            </div>
+                                            <div
+                                                class="flex items-center gap-1 font-telemetry-data text-label-sm text-on-surface-variant">
+                                                <span class="text-secondary">Direct Inquiry</span>
+                                                <button class="p-0.5 hover:text-primary" type="button"><span
+                                                        class="material-symbols-outlined text-[14px]">play_circle</span></button>
+                                            </div>
+                                        </div>
+                                        <p class="font-body-sm text-body-sm text-on-surface leading-relaxed">
+                                            承知いたしました。投機的デコーディングパイプラインを展開した場合、日本語の敬語活用処理中のメモリ帯域幅は圧縮されますでしょうか？
+                                        </p>
+                                        <div class="flex items-center justify-between pt-1">
+                                            <span class="font-label-sm text-label-sm text-outline">Furigana: 投機的
+                                                [とうきてき]</span>
+                                            <span class="font-telemetry-data text-[10px] text-primary font-bold">SYNTH
+                                                OK</span>
+                                        </div>
+                                    </div>
+                                    <!-- Translation 3 -->
+                                    <div
+                                        class="rounded-xl bg-surface-container-low/95 p-space-sm flex flex-col gap-space-xs shadow-md border-r-2 border-primary-container">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-space-xs">
+                                                <span
+                                                    class="px-1.5 py-0.5 rounded-full bg-primary-container/20 text-primary font-label-sm text-label-sm font-bold">Elena
+                                                    [AI Synth]</span>
+                                                <span
+                                                    class="font-telemetry-data text-label-sm text-tertiary">+119ms</span>
+                                            </div>
+                                            <div
+                                                class="flex items-center gap-1 font-telemetry-data text-label-sm text-on-surface-variant">
+                                                <span class="text-secondary">Affirmative Polite</span>
+                                                <button class="p-0.5 hover:text-primary" type="button"><span
+                                                        class="material-symbols-outlined text-[14px]">play_circle</span></button>
+                                            </div>
+                                        </div>
+                                        <p class="font-body-sm text-body-sm text-on-surface leading-relaxed">
+                                            その通りでございます。自然な敬語表現を損なうことなく、KVキャッシュの占有領域は約40パーセント削減されます。
+                                        </p>
+                                        <div class="flex items-center justify-between pt-1">
+                                            <span class="font-label-sm text-label-sm text-outline">Latency: 119ms •
+                                                Jitter: 2ms</span>
+                                            <span class="font-telemetry-data text-[10px] text-primary font-bold">TTS
+                                                CACHED</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Live Pending Streaming Audio Buffer Banner -->
+                        <div
+                            class="rounded-2xl bg-surface-container-highest/90 p-space-sm shadow-xl flex flex-col gap-space-xs">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-space-xs">
+                                    <span
+                                        class="material-symbols-outlined text-[16px] text-secondary animate-spin">autorenew</span>
+                                    <span
+                                        class="font-label-sm text-label-sm text-secondary font-bold uppercase tracking-widest">REALTIME
+                                        STREAMING INGESTION BUFFER</span>
+                                </div>
+                                <span class="font-telemetry-data text-label-sm text-outline">CHUNK #1849 • CONF:
+                                    97.2%</span>
+                            </div>
+                            <div
+                                class="p-space-sm rounded-xl bg-surface-container-lowest/80 flex items-center justify-between gap-space-md">
+                                <div
+                                    class="flex items-center gap-space-xs min-w-0 font-body-sm text-body-sm text-on-surface">
+                                    <span
+                                        class="text-on-surface-variant shrink-0 font-telemetry-data text-label-sm">[Elena]:</span>
+                                    <span class="truncate">"...and that confirms we are ready to commence production
+                                        load simulation for the APAC region..."</span>
+                                    <span
+                                        class="inline-block w-2 h-4 bg-secondary animate-pulse rounded-sm shrink-0"></span>
+                                </div>
+                                <div class="hidden sm:flex items-center gap-1 shrink-0">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-secondary animate-ping"></span>
+                                    <span
+                                        class="font-telemetry-data text-label-sm text-secondary font-bold">STREAMING</span>
+                                </div>
+                            </div>
+                        </div>
+                    </main>
+                    <!-- ========================================================================= -->
+                    <!-- 4. RIGHT COLUMN: REAL-TIME MEETING LOGGER & AI SUMMARY WORKSPACE (~360px) -->
+                    <!-- ========================================================================= -->
+                    <aside class="lg:col-span-3 flex flex-col gap-space-md">
+                        <!-- Intelligence Workspace Header -->
+                        <div
+                            class="rounded-2xl bg-surface-container-low/90 backdrop-blur-md p-space-md flex flex-col gap-space-md shadow-xl">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-space-xs">
+                                    <span class="material-symbols-outlined text-[20px] text-primary">auto_awesome</span>
+                                    <span class="font-headline-sm text-body-md font-semibold text-on-surface">Meeting
+                                        Intelligence</span>
+                                </div>
+                                <span class="flex items-center gap-1 font-telemetry-data text-label-sm text-secondary">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                                    12s ago
+                                </span>
+                            </div>
+                            <!-- Executive Brief Dynamic Synopsis -->
+                            <div class="p-space-sm rounded-xl bg-surface-container-high/90 flex flex-col gap-space-xs">
+                                <div class="flex items-center justify-between">
+                                    <span
+                                        class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-bold">Live
+                                        Executive Brief</span>
+                                    <span class="font-label-sm text-label-sm text-primary">Gemini 2.5 Synth</span>
+                                </div>
+                                <ul
+                                    class="flex flex-col gap-space-xs font-body-sm text-body-sm text-on-surface leading-relaxed">
+                                    <li class="flex items-start gap-space-xs">
+                                        <span class="text-secondary mt-1 font-bold">•</span>
+                                        <span>Sub-40ms latency validated for multi-tenant voice routing nodes.</span>
+                                    </li>
+                                    <li class="flex items-start gap-space-xs">
+                                        <span class="text-secondary mt-1 font-bold">•</span>
+                                        <span>Speculative decoding confirmed to compress KV-cache memory bandwidth by
+                                            ~40%.</span>
+                                    </li>
+                                    <li class="flex items-start gap-space-xs">
+                                        <span class="text-secondary mt-1 font-bold">•</span>
+                                        <span>Japanese honorific Keigo integrity preserved across live TTS synthesis
+                                            streams.</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <!-- Key Decisions & Action Items Tracker -->
+                            <div class="flex flex-col gap-space-xs">
+                                <div class="flex items-center justify-between">
+                                    <span
+                                        class="font-label-sm text-label-sm text-on-surface-variant uppercase font-bold">Action
+                                        Items &amp; Commitments</span>
+                                    <span
+                                        class="px-space-xs py-0.5 rounded-full bg-primary-container/20 text-primary font-telemetry-data text-[10px]">2
+                                        DETECTED</span>
+                                </div>
+                                <!-- Action Item 1 -->
+                                <div
+                                    class="p-space-sm rounded-xl bg-surface-container-high/80 flex flex-col gap-1 shadow-sm">
+                                    <div class="flex items-center justify-between">
+                                        <span
+                                            class="px-space-xs py-0.5 rounded-full bg-error-container text-on-error-container font-label-sm text-label-sm font-bold">High
+                                            Priority</span>
+                                        <span class="font-telemetry-data text-label-sm text-outline">EOD Thursday</span>
+                                    </div>
+                                    <p class="font-body-sm text-body-sm text-on-surface font-medium pt-1">
+                                        Benchmark KV-cache speculative model against 50 concurrent Japanese audio
+                                        streams.
+                                    </p>
+                                    <div class="flex items-center justify-between pt-1">
+                                        <div
+                                            class="flex items-center gap-space-xs font-label-sm text-label-sm text-on-surface-variant">
+                                            <span
+                                                class="material-symbols-outlined text-[14px] text-secondary">person</span>
+                                            <span>Assignee: Elena Rostova</span>
+                                        </div>
+                                        <button class="text-on-surface-variant hover:text-secondary" type="button"><span
+                                                class="material-symbols-outlined text-[16px]">check_box_outline_blank</span></button>
+                                    </div>
+                                </div>
+                                <!-- Action Item 2 -->
+                                <div
+                                    class="p-space-sm rounded-xl bg-surface-container-high/80 flex flex-col gap-1 shadow-sm">
+                                    <div class="flex items-center justify-between">
+                                        <span
+                                            class="px-space-xs py-0.5 rounded-full bg-primary-container text-on-primary-container font-label-sm text-label-sm font-bold">Architecture</span>
+                                        <span class="font-telemetry-data text-label-sm text-outline">Next Sprint
+                                            Sync</span>
+                                    </div>
+                                    <p class="font-body-sm text-body-sm text-on-surface font-medium pt-1">
+                                        Finalize Opus 24kHz direct socket failover routes for Tokyo egress edge nodes.
+                                    </p>
+                                    <div class="flex items-center justify-between pt-1">
+                                        <div
+                                            class="flex items-center gap-space-xs font-label-sm text-label-sm text-on-surface-variant">
+                                            <span
+                                                class="material-symbols-outlined text-[14px] text-secondary">person</span>
+                                            <span>Assignee: Kenji Sato</span>
+                                        </div>
+                                        <button class="text-on-surface-variant hover:text-secondary" type="button"><span
+                                                class="material-symbols-outlined text-[16px]">check_box_outline_blank</span></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Bilingual Key Terms & Entity Extraction Cloud -->
+                            <div class="flex flex-col gap-space-xs pt-space-xs">
+                                <span
+                                    class="font-label-sm text-label-sm text-on-surface-variant uppercase font-bold">Acoustic
+                                    Entities &amp; Lexicon</span>
+                                <div class="flex flex-wrap gap-1.5">
+                                    <span
+                                        class="px-space-xs py-1 rounded-full bg-surface-container-high text-on-surface font-telemetry-data text-label-sm">KV-Cache
+                                        Compression</span>
+                                    <span
+                                        class="px-space-xs py-1 rounded-full bg-surface-container-high text-secondary font-telemetry-data text-label-sm">推論レイテンシ
+                                        (Inference Latency)</span>
+                                    <span
+                                        class="px-space-xs py-1 rounded-full bg-surface-container-high text-on-surface font-telemetry-data text-label-sm">Cross-Lingual
+                                        Diarization</span>
+                                    <span
+                                        class="px-space-xs py-1 rounded-full bg-surface-container-high text-primary font-telemetry-data text-label-sm">敬語
+                                        (Keigo Politeness)</span>
+                                    <span
+                                        class="px-space-xs py-1 rounded-full bg-surface-container-high text-on-surface font-telemetry-data text-label-sm">WebRTC
+                                        Opus 24kHz</span>
+                                </div>
+                            </div>
+                            <!-- Export Meeting Summary Dock -->
+                            <div class="pt-space-xs flex flex-col gap-space-xs">
+                                <span
+                                    class="font-label-sm text-label-sm text-on-surface-variant uppercase font-bold">Export
+                                    Artifacts</span>
+                                <div class="grid grid-cols-2 gap-space-xs">
+                                    <button
+                                        class="flex items-center justify-center gap-space-xs py-2 px-space-xs rounded-full bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-sm text-label-sm transition-all shadow-sm"
+                                        type="button">
+                                        <span
+                                            class="material-symbols-outlined text-[16px] text-secondary">description</span>
+                                        <span>Markdown (.md)</span>
+                                    </button>
+                                    <button
+                                        class="flex items-center justify-center gap-space-xs py-2 px-space-xs rounded-full bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-sm text-label-sm transition-all shadow-sm"
+                                        type="button">
+                                        <span
+                                            class="material-symbols-outlined text-[16px] text-primary">edit_note</span>
+                                        <span>Sync to Notion</span>
+                                    </button>
+                                    <button
+                                        class="flex items-center justify-center gap-space-xs py-2 px-space-xs rounded-full bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-sm text-label-sm transition-all shadow-sm"
+                                        type="button">
+                                        <span
+                                            class="material-symbols-outlined text-[16px] text-tertiary">content_copy</span>
+                                        <span>Copy Log (.txt)</span>
+                                    </button>
+                                    <button
+                                        class="flex items-center justify-center gap-space-xs py-2 px-space-xs rounded-full bg-secondary-container/20 text-secondary hover:bg-secondary-container hover:text-on-secondary-container font-label-sm text-label-sm font-bold transition-all shadow-sm"
+                                        type="button">
+                                        <span class="material-symbols-outlined text-[16px]">share</span>
+                                        <span>Share Live Link</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+            <script>
+                // Simple reactive micro-interactions for the studio deck
+                (function () {
+                    // Session clock simulator
+                    let seconds = 24 * 60 + 18;
+                    const clockEl = document.getElementById('session-clock');
+                    if (clockEl) {
+                        setInterval(() => {
+                            seconds++;
+                            const hrs = String(Math.floor(seconds / 3600)).padStart(2, '0');
+                            const mins = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+                            const secs = String(seconds % 60).padStart(2, '0');
+                            clockEl.textContent = `${hrs}:${mins}:${secs}`;
+                        }, 1000);
+                    }
+
+                    // Mic mute toggle button
+                    const muteBtn = document.getElementById('mute-toggle');
+                    const micIcon = document.getElementById('mic-icon');
+                    let isMuted = false;
+                    if (muteBtn && micIcon) {
+                        muteBtn.addEventListener('click', () => {
+                            isMuted = !isMuted;
+                            if (isMuted) {
+                                micIcon.textContent = 'mic_off';
+                                muteBtn.classList.add('bg-error-container', 'text-on-error-container');
+                            } else {
+                                micIcon.textContent = 'mic';
+                                muteBtn.classList.remove('bg-error-container', 'text-on-error-container');
+                            }
+                        });
+                    }
+                })();
+            </script>
+        </main>
+    </div>
+</body>
+
+</html>
