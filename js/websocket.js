@@ -1,148 +1,183 @@
 // Gemini Live Multimodal WebSocket Client
-import { buildSystemInstruction } from './config.js';
-import { playPcmChunk, startMicCapture, stopMicCapture } from './audio.js';
+import { buildSystemInstruction, getLiveModel, getTranslationLanguageCode } from './config.js';
+import { flushPlayback, playPcmChunk, startMicCapture, stopMicCapture } from './audio.js';
+
+const ENDPOINT = 'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent';
 
 let ws = null;
-let isConnecting = false;
 
-export function isSessionConnected() {
-    return ws && ws.readyState === WebSocket.OPEN;
+export function isSessionActive() {
+    return ws !== null;
 }
 
-export async function connectGeminiLive({
-    apiKey,
-    model = 'models/gemini-2.0-flash-exp',
-    sourceLang,
-    targetLang,
-    targetTone,
-    isMuted = () => false,
-    isPaused = () => false,
-    onStatusChange,
-    onIncomingText,
-    onError,
-    showToast
-}) {
-    if (!apiKey) {
-        if (showToast) showToast("API Key is required to connect to Gemini Live.", "error", "key");
-        return;
-    }
-
-    if (isSessionConnected()) {
-        disconnectGeminiLive();
-    }
-
-    isConnecting = true;
-    if (onStatusChange) onStatusChange('connecting');
-    if (showToast) showToast(`Connecting to Gemini Live [${sourceLang.code} → ${targetLang.code}]...`, "purple", "sensors");
-
-    const endpoint = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=${apiKey}`;
-
-    try {
-        ws = new WebSocket(endpoint);
-    } catch (err) {
-        console.error("WebSocket connection failure:", err);
-        isConnecting = false;
-        if (onStatusChange) onStatusChange('disconnected');
-        if (onError) onError(err);
-        return;
-    }
-
-    ws.onopen = async () => {
-        isConnecting = false;
-        console.log("Gemini Live WebSocket connection established!");
-        if (onStatusChange) onStatusChange('connected');
-
-        // 1. Send Handshake Setup message with configured Language Matrix & System Instruction
-        const setupMsg = {
+function buildSetupMessage(model, sourceLang, targetLang, targetTone) {
+    // The Live Translate model takes no system instruction, and it nests the
+    // transcription settings under generationConfig instead of the setup root
+    if (getLiveModel(model).isTranslateModel) {
+        return {
             setup: {
-                model: model,
+                model,
                 generationConfig: {
-                    responseModalities: ["AUDIO", "TEXT"],
-                    speechConfig: {
-                        voiceConfig: {
-                            prebuiltVoiceConfig: {
-                                voiceName: targetLang.voiceName || "Kore"
-                            }
-                        }
+                    responseModalities: ["AUDIO"],
+                    inputAudioTranscription: {},
+                    outputAudioTranscription: {},
+                    translationConfig: {
+                        targetLanguageCode: getTranslationLanguageCode(targetLang)
                     }
-                },
-                systemInstruction: {
-                    parts: [{
-                        text: buildSystemInstruction(sourceLang, targetLang, targetTone)
-                    }]
                 }
             }
         };
+    }
 
-        ws.send(JSON.stringify(setupMsg));
-        console.log("Sent setup instruction:", setupMsg.setup.systemInstruction.parts[0].text);
-
-        // 2. Start Microphone capture and stream chunks over socket
-        try {
-            await startMicCapture((base64Audio) => {
-                if (ws && ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify({
-                        realtimeInput: {
-                            mediaChunks: [{
-                                mimeType: "audio/pcm;rate=16000",
-                                data: base64Audio
-                            }]
+    return {
+        setup: {
+            model,
+            generationConfig: {
+                responseModalities: ["AUDIO"],
+                speechConfig: {
+                    voiceConfig: {
+                        prebuiltVoiceConfig: {
+                            voiceName: targetLang.voiceName
                         }
-                    }));
+                    }
                 }
-            }, {
-                isMuted: isMuted,
-                isPaused: isPaused
-            });
-
-            if (showToast) {
-                showToast(`Connected! Speak in ${sourceLang.name} to hear translation in ${targetLang.name}.`, "success", "record_voice_over");
-            }
-        } catch (micErr) {
-            console.error("Microphone capture error:", micErr);
-            if (showToast) showToast("Microphone access unavailable or denied.", "error", "mic_off");
+            },
+            systemInstruction: {
+                parts: [{
+                    text: buildSystemInstruction(sourceLang, targetLang, targetTone)
+                }]
+            },
+            inputAudioTranscription: {},
+            outputAudioTranscription: {}
         }
     };
+}
 
-    ws.onmessage = (event) => {
+function describeMicError(err) {
+    if (err.name === 'NotAllowedError') return "Microphone access was denied. Allow it in your browser and try again.";
+    if (err.name === 'NotFoundError') return "No microphone was found.";
+    if (!navigator.mediaDevices) return "Microphone needs a secure page. Open the app on https or localhost.";
+    return `Could not start the microphone: ${err.message}`;
+}
+
+export function connectGeminiLive({
+    apiKey,
+    model,
+    sourceLang,
+    targetLang,
+    targetTone,
+    isMuted,
+    onStatusChange,
+    onInputText,
+    onOutputText,
+    onTurnEnd,
+    showToast
+}) {
+    disconnectGeminiLive();
+    onStatusChange('connecting');
+
+    let socket;
+    try {
+        socket = new WebSocket(`${ENDPOINT}?key=${encodeURIComponent(apiKey)}`);
+    } catch (err) {
+        console.error("WebSocket connection failure:", err);
+        onStatusChange('disconnected');
+        showToast("Could not open a connection to Gemini Live.", "error", "error");
+        return;
+    }
+    ws = socket;
+    let isSetupComplete = false;
+
+    // Every handler checks ws === socket, so a replaced socket's late events
+    // can't tear down the session that took over from it
+    socket.onopen = () => {
+        if (ws !== socket) return;
+        console.log("WebSocket opened. Sending setup for model:", model);
+        socket.send(JSON.stringify(buildSetupMessage(model, sourceLang, targetLang, targetTone)));
+    };
+
+    socket.onmessage = async (event) => {
+        let data;
         try {
-            const data = JSON.parse(event.data);
-
-            if (data.serverContent?.modelTurn?.parts) {
-                data.serverContent.modelTurn.parts.forEach(part => {
-                    // Play audio PCM stream if received
-                    if (part.inlineData?.data) {
-                        playPcmChunk(part.inlineData.data);
-                    }
-                    // Render translation text if received
-                    if (part.text && onIncomingText) {
-                        onIncomingText(part.text);
-                    }
-                });
-            }
+            data = JSON.parse(event.data instanceof Blob ? await event.data.text() : event.data);
         } catch (e) {
             console.error("Failed to parse incoming WebSocket message:", e);
+            return;
         }
+        if (ws !== socket) return;
+
+        // 1. Server confirms setup is complete: NOW we can begin microphone capture
+        if (data.setupComplete) {
+            isSetupComplete = true;
+            try {
+                await startMicCapture((base64Audio) => {
+                    if (socket.readyState === WebSocket.OPEN) {
+                        socket.send(JSON.stringify({
+                            realtimeInput: {
+                                audio: {
+                                    mimeType: "audio/pcm;rate=16000",
+                                    data: base64Audio
+                                }
+                            }
+                        }));
+                    }
+                }, { isMuted });
+            } catch (micErr) {
+                console.error("Microphone capture error:", micErr);
+                if (ws !== socket) return;
+                disconnectGeminiLive();
+                onStatusChange('disconnected');
+                showToast(describeMicError(micErr), "error", "mic_off");
+                return;
+            }
+            if (ws !== socket) return;
+            onStatusChange('connected');
+            showToast(`Listening. Speak in ${sourceLang.name} to translate into ${targetLang.name}.`, "success", "mic");
+            return;
+        }
+
+        const content = data.serverContent;
+        if (!content) return;
+
+        // 2. Play incoming audio chunks and display transcripts
+        content.modelTurn?.parts?.forEach(part => {
+            if (part.inlineData?.data) {
+                playPcmChunk(part.inlineData.data);
+            }
+        });
+        if (content.inputTranscription?.text) onInputText(content.inputTranscription.text);
+        if (content.outputTranscription?.text) onOutputText(content.outputTranscription.text);
+
+        // 3. Handle interruption and end of turn
+        if (content.interrupted) flushPlayback();
+        if (content.interrupted || content.turnComplete) onTurnEnd();
     };
 
-    ws.onerror = (err) => {
+    socket.onerror = (err) => {
         console.error("Gemini WebSocket error:", err);
-        if (onError) onError(err);
-        if (showToast) showToast("WebSocket error occurred. Check API key and quota.", "error", "error");
     };
 
-    ws.onclose = () => {
-        console.log("Gemini WebSocket closed.");
-        isConnecting = false;
+    socket.onclose = (event) => {
+        console.warn("Gemini WebSocket closed. Code:", event.code, "Reason:", event.reason);
+        if (ws !== socket) return;
+        ws = null;
         stopMicCapture();
-        if (onStatusChange) onStatusChange('disconnected');
+        flushPlayback();
+        onStatusChange('disconnected');
+        if (event.reason) {
+            showToast(`Session ended: ${event.reason}`, "error", "warning");
+        } else if (!isSetupComplete || event.code !== 1000) {
+            showToast(`Could not reach Gemini Live (code ${event.code}). Check your API key and network.`, "error", "warning");
+        }
     };
 }
 
 export function disconnectGeminiLive() {
     stopMicCapture();
+    flushPlayback();
     if (ws) {
-        ws.close();
+        const socket = ws;
         ws = null;
+        socket.close();
     }
 }

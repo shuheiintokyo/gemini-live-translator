@@ -1,48 +1,41 @@
-// Configuration, Supported Languages, and Global Constants
+// Configuration, Supported Languages, and Live Models
 export const SUPPORTED_LANGUAGES = [
-    { code: 'EN-US', name: 'English (US)', flag: '🇺🇸', speechLang: 'en-US', desc: 'Realtime Neural VAD • Low Jitter', voiceName: 'Zephyr' },
-    { code: 'JA-JP', name: 'Japanese (日本語)', flag: '🇯🇵', speechLang: 'ja-JP', desc: 'Keigo Politeness Protocol Active', voiceName: 'Kore' },
-    { code: 'EN-GB', name: 'English (UK)', flag: '🇬🇧', speechLang: 'en-GB', desc: 'Standard British Prosody & Idioms', voiceName: 'Puck' },
-    { code: 'ES-ES', name: 'Spanish (Español)', flag: '🇪🇸', speechLang: 'es-ES', desc: 'Castilian & Latin American Spanish', voiceName: 'Aoede' },
-    { code: 'FR-FR', name: 'French (Français)', flag: '🇫🇷', speechLang: 'fr-FR', desc: 'Metropolitan French Natural Phrasing', voiceName: 'Fenrir' },
-    { code: 'DE-DE', name: 'German (Deutsch)', flag: '🇩🇪', speechLang: 'de-DE', desc: 'Standard Hochdeutsch Articulation', voiceName: 'Kore' },
-    { code: 'ZH-CN', name: 'Chinese (Mandarin / 中文)', flag: '🇨🇳', speechLang: 'zh-CN', desc: 'Putonghua Standard Four Tones', voiceName: 'Aoede' },
-    { code: 'KO-KR', name: 'Korean (한국어)', flag: '🇰🇷', speechLang: 'ko-KR', desc: 'Honorific Jondaetmal (존댓말) Tuning', voiceName: 'Kore' },
-    { code: 'IT-IT', name: 'Italian (Italiano)', flag: '🇮🇹', speechLang: 'it-IT', desc: 'Standard Italian Conversational Flow', voiceName: 'Zephyr' },
-    { code: 'PT-BR', name: 'Portuguese (Português)', flag: '🇧🇷', speechLang: 'pt-BR', desc: 'Brazilian & Iberian Portuguese', voiceName: 'Puck' },
-    { code: 'HI-IN', name: 'Hindi (हिन्दी)', flag: '🇮🇳', speechLang: 'hi-IN', desc: 'Standard Hindi & Modern Conversational', voiceName: 'Fenrir' },
-    { code: 'AR-SA', name: 'Arabic (العربية)', flag: '🇸🇦', speechLang: 'ar-SA', desc: 'Modern Standard Arabic (الفصحى)', voiceName: 'Kore' },
-    { code: 'RU-RU', name: 'Russian (Русский)', flag: '🇷🇺', speechLang: 'ru-RU', desc: 'Standard Literary Russian Cadence', voiceName: 'Fenrir' },
-    { code: 'NL-NL', name: 'Dutch (Nederlands)', flag: '🇳🇱', speechLang: 'nl-NL', desc: 'Standard Algemeen Nederlands', voiceName: 'Zephyr' },
-    { code: 'VI-VN', name: 'Vietnamese (Tiếng Việt)', flag: '🇻🇳', speechLang: 'vi-VN', desc: 'Northern & Southern Tonal Prosody', voiceName: 'Aoede' }
+    { code: 'EN-US', name: 'English (US)', flag: '🇺🇸', voiceName: 'Zephyr' },
+    { code: 'JA-JP', name: 'Japanese (日本語)', flag: '🇯🇵', voiceName: 'Kore' },
+    { code: 'EN-GB', name: 'English (UK)', flag: '🇬🇧', voiceName: 'Puck' },
+    { code: 'ES-ES', name: 'Spanish (Español)', flag: '🇪🇸', voiceName: 'Aoede' },
+    { code: 'FR-FR', name: 'French (Français)', flag: '🇫🇷', voiceName: 'Fenrir' },
+    { code: 'DE-DE', name: 'German (Deutsch)', flag: '🇩🇪', voiceName: 'Kore' },
+    { code: 'ZH-CN', name: 'Chinese (Mandarin / 中文)', flag: '🇨🇳', voiceName: 'Aoede' },
+    { code: 'KO-KR', name: 'Korean (한국어)', flag: '🇰🇷', voiceName: 'Kore' },
+    { code: 'IT-IT', name: 'Italian (Italiano)', flag: '🇮🇹', voiceName: 'Zephyr' },
+    { code: 'PT-BR', name: 'Portuguese (Português)', flag: '🇧🇷', voiceName: 'Puck' },
+    { code: 'HI-IN', name: 'Hindi (हिन्दी)', flag: '🇮🇳', voiceName: 'Fenrir' },
+    { code: 'AR-SA', name: 'Arabic (العربية)', flag: '🇸🇦', voiceName: 'Kore' },
+    { code: 'RU-RU', name: 'Russian (Русский)', flag: '🇷🇺', voiceName: 'Fenrir' },
+    { code: 'NL-NL', name: 'Dutch (Nederlands)', flag: '🇳🇱', voiceName: 'Zephyr' },
+    { code: 'VI-VN', name: 'Vietnamese (Tiếng Việt)', flag: '🇻🇳', voiceName: 'Aoede' }
 ];
 
 export function getLanguageByCode(code) {
     return SUPPORTED_LANGUAGES.find(l => l.code === code) || SUPPORTED_LANGUAGES[0];
 }
 
-export const LEXICON_DEFINITIONS = {
-    'KV-Cache Compression': 'A speculative decoding optimization that compresses key-value cache memory footprints by ~40% during cross-lingual sentence tokenization.',
-    '推論レイテンシ': 'Inference latency: Time elapsed from incoming 16kHz audio packet ingestion to initial decoded token generation in Gemini 2.5 Argon.',
-    'Cross-Lingual Diarization': 'Real-time multi-speaker acoustic segregation separating distinct voice prints across concurrent multilingual channels.',
-    'Keigo Politeness': 'Japanese honorific language structure (丁寧語, 尊敬語, 謙譲語) maintained dynamically to preserve executive business etiquette.',
-    'WebRTC Opus 24kHz': 'Low-delay wideband audio codec transmitting 24kHz sampled voice packets over bidirectional WebRTC data channels.'
-};
+export const LIVE_MODELS = [
+    { id: 'models/gemini-3.8-live', label: 'Gemini 3.8 Live', isTranslateModel: false },
+    { id: 'models/gemini-3.5-live-translate-preview', label: 'Gemini 3.5 Live Translate (Preview)', isTranslateModel: true }
+];
 
-export const HARDWARE_DEVICES = {
-    mics: [
-        'Shure SM7B via Scarlett 2i2 USB',
-        'Built-In Device Array / Mobile Mic',
-        'Rode VideoMic NTG (USB-C)',
-        'Virtual Aggregate Loopback Device'
-    ],
-    monitors: [
-        'Studio Monitors (Balanced TRS)',
-        'Wireless Headphones (Opus Direct)',
-        'Built-in Device Speaker Output',
-        'System Default Audio Out'
-    ]
-};
+export function getLiveModel(id) {
+    return LIVE_MODELS.find(m => m.id === id) || LIVE_MODELS[0];
+}
+
+// The Live Translate model takes plain BCP-47 codes, e.g. "ja", "zh-Hans", "pt-BR"
+export function getTranslationLanguageCode(lang) {
+    if (lang.code === 'ZH-CN') return 'zh-Hans';
+    if (lang.code === 'PT-BR') return 'pt-BR';
+    return lang.code.split('-')[0].toLowerCase();
+}
 
 export function buildSystemInstruction(sourceLang, targetLang, tone = 'polite') {
     let toneGuidance = "natural, accurate, and fluent";
@@ -71,9 +64,8 @@ The user is speaking in ${sourceLang.name} (${sourceLang.code}).
 Your job is to continuously translate everything the user speaks into ${targetLang.name} (${targetLang.code}) using ${toneGuidance}.
 
 Strict guidelines:
-1. Provide the direct translation immediately without commentary, preambles, or conversational replies.
-2. Output both text transcription of the translation and synthesized voice audio.
-3. DO NOT answer questions or engage in conversation with the user; translate ONLY what the user said into ${targetLang.name}.
-4. If the user asks a question, translate the question itself into ${targetLang.name}.
-5. Preserve all technical terminology, domain names, and numbers accurately.`;
+1. Speak the direct translation immediately without commentary, preambles, or conversational replies.
+2. DO NOT answer questions or engage in conversation with the user; translate ONLY what the user said into ${targetLang.name}.
+3. If the user asks a question, translate the question itself into ${targetLang.name}.
+4. Preserve all technical terminology, domain names, and numbers accurately.`;
 }

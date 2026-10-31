@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport" />
     <meta content="web_dashboard" name="shell-type" />
-    <title>Gemini Live Voice Studio · Real-Time Bi-Directional Speech-to-Speech Engine</title>
+    <title>Gemini Live Translator</title>
     
     <!-- Material Symbols & Typography -->
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
@@ -112,657 +112,144 @@
 
 <body class="bg-surface text-on-surface font-body-md text-body-md antialiased selection:bg-primary-container selection:text-on-primary">
 
-    <!-- ========================================================================= -->
-    <!-- TOP GLOBAL HEADER BAR (MOBILE & DESKTOP RESPONSIVE)                       -->
-    <!-- ========================================================================= -->
+    <!-- TOP HEADER BAR -->
     <header class="fixed top-0 left-0 right-0 h-16 z-50 bg-[#0b0f19]/90 backdrop-blur-2xl border-b border-white/[0.08]">
         <div class="w-full h-16 px-3 sm:px-gutter flex items-center justify-between gap-space-sm sm:gap-space-md">
-            
-            <!-- Left: Brand Title & Mobile Menu Toggle -->
-            <div class="flex items-center gap-space-xs sm:gap-space-sm shrink-0">
-                <button id="mobile-menu-btn" class="lg:hidden p-1.5 rounded-full hover:bg-surface-container-high text-on-surface cursor-pointer" type="button" title="Open Navigation Menu">
-                    <span class="material-symbols-outlined text-[24px]">menu</span>
-                </button>
+            <div class="flex items-center gap-space-xs sm:gap-space-sm min-w-0">
                 <span class="material-symbols-outlined text-[24px] sm:text-[28px] text-primary">auto_awesome</span>
-                <div class="flex flex-col">
-                    <span class="font-headline-sm text-[16px] sm:text-headline-sm font-semibold tracking-tight text-on-surface leading-none">Gemini Live Studio</span>
-                    <span class="font-label-sm text-[9px] sm:text-label-sm text-on-surface-variant uppercase tracking-widest mt-0.5 sm:mt-1 hidden xs:block">Real-Time Speech Engine</span>
-                </div>
-                <div class="h-6 w-px bg-outline-variant/40 mx-space-xs hidden xl:block"></div>
-                <!-- Model Badge -->
-                <button id="engine-badge-btn" class="hidden xl:flex items-center gap-space-xs px-space-sm py-1 rounded-full bg-surface-container-high/80 border border-primary/30 hover:border-primary transition-all cursor-pointer" title="Configure AI Engine">
-                    <span class="relative flex h-2 w-2">
-                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-2 w-2 bg-secondary"></span>
-                    </span>
-                    <span id="active-model-name" class="font-label-md text-label-md text-primary font-bold tracking-wider">Gemini 2.0 Flash Live</span>
+                <span class="font-headline-sm text-[16px] sm:text-headline-sm font-semibold tracking-tight text-on-surface leading-none truncate">Gemini Live Translator</span>
+                <button id="engine-badge-btn" class="hidden md:flex items-center px-space-sm py-1 ml-space-xs rounded-full bg-surface-container-high/80 border border-primary/30 hover:border-primary transition-all cursor-pointer" type="button" title="Change model">
+                    <span id="active-model-name" class="font-label-md text-label-md text-primary font-bold tracking-wider">Gemini 3.8 Live</span>
                 </button>
             </div>
 
-            <!-- Center Telemetry Badges (Desktop) -->
-            <div class="hidden lg:flex items-center gap-space-sm shrink-0">
-                <div class="flex items-center gap-space-xs px-space-sm py-1 rounded-full bg-surface-container-low border border-white/[0.05]">
-                    <span class="h-1.5 w-1.5 rounded-full bg-secondary"></span>
-                    <span id="mode-status-text" class="font-label-sm text-label-sm text-on-surface-variant">Configured · PayGo</span>
-                </div>
-                <div class="flex items-center gap-space-xs px-space-sm py-1 rounded-full bg-surface-container-low border border-white/[0.05]" title="WebSocket Round-trip Latency">
-                    <span class="material-symbols-outlined text-[14px] text-tertiary">bolt</span>
-                    <span class="font-telemetry-data text-telemetry-data text-on-surface"><span id="telemetry-latency">38ms</span></span>
-                </div>
-            </div>
-
-            <!-- Right Controls -->
             <div class="flex items-center gap-1.5 sm:gap-space-sm shrink-0">
-                <!-- Recording / Live Translation Master Toggle Button -->
-                <button id="rec-toggle-btn" class="flex items-center gap-space-xs px-3 sm:px-4 py-1.5 rounded-full bg-primary-container text-on-primary-container hover:bg-primary hover:text-on-primary transition-all font-bold text-xs sm:text-label-sm shadow-[0_0_16px_rgba(160,120,255,0.4)] cursor-pointer" type="button" title="Start or Stop Live Speech Translation">
+                <button id="rec-toggle-btn" type="button" title="Start or stop live translation">
                     <span id="rec-dot" class="material-symbols-outlined text-[16px]">play_arrow</span>
                     <span id="rec-label" class="uppercase tracking-wider">Start Live</span>
                 </button>
-                <!-- Engine Settings Tune Button -->
-                <button id="header-settings-btn" class="p-1.5 rounded-full bg-surface-container-low hover:bg-surface-container-high hover:text-on-surface text-on-surface-variant transition-colors border border-white/[0.05] cursor-pointer" type="button" title="Open Engine Settings Modal">
+                <button id="header-settings-btn" class="p-1.5 rounded-full bg-surface-container-low hover:bg-surface-container-high hover:text-on-surface text-on-surface-variant transition-colors border border-white/[0.05] cursor-pointer" type="button" title="Settings">
                     <span class="material-symbols-outlined text-[20px]">tune</span>
                 </button>
             </div>
         </div>
     </header>
 
-    <!-- ========================================================================= -->
-    <!-- DESKTOP FIXED SIDEBAR NAVIGATION (HIDDEN ON MOBILE)                       -->
-    <!-- ========================================================================= -->
-    <aside class="hidden lg:flex fixed left-0 top-16 bottom-0 w-64 bg-surface-container-lowest border-r border-white/[0.06] z-40 flex-col justify-between py-space-md">
-        <div class="flex flex-col gap-space-md px-space-sm">
-            <div class="px-space-sm py-1 flex items-center justify-between">
-                <span class="font-label-sm text-label-sm uppercase tracking-widest text-outline">Workstation Deck</span>
-                <span class="font-label-sm text-label-sm text-secondary font-bold">v2.5.0</span>
-            </div>
-            <nav class="flex flex-col gap-space-xs" id="sidebar-nav">
-                <button class="nav-item flex items-center gap-space-sm px-space-md py-2.5 transition-all bg-primary-container text-on-primary-container font-bold rounded-full shadow-[0_0_20px_-4px_rgba(160,120,255,0.4)] cursor-pointer text-left w-full" data-view="live-studio">
-                    <span class="material-symbols-outlined text-[20px]">settings_voice</span>
-                    <span class="font-headline-sm text-body-md font-medium">Live Studio</span>
-                </button>
-                <button class="nav-item flex items-center gap-space-sm px-space-md py-2.5 rounded-full text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all cursor-pointer text-left w-full" data-view="meeting-logger">
-                    <span class="material-symbols-outlined text-[20px]">history_edu</span>
-                    <span class="font-headline-sm text-body-md font-medium">Meeting Logger</span>
-                </button>
-                <button class="nav-item flex items-center gap-space-sm px-space-md py-2.5 rounded-full text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all cursor-pointer text-left w-full" data-view="voice-synthesis">
-                    <span class="material-symbols-outlined text-[20px]">record_voice_over</span>
-                    <span class="font-headline-sm text-body-md font-medium">Voice Synthesis</span>
-                </button>
-                <button class="nav-item flex items-center gap-space-sm px-space-md py-2.5 rounded-full text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all cursor-pointer text-left w-full" data-view="acoustic-telemetry">
-                    <span class="material-symbols-outlined text-[20px]">equalizer</span>
-                    <span class="font-headline-sm text-body-md font-medium">Acoustic Telemetry</span>
-                </button>
-                <button class="nav-item flex items-center gap-space-sm px-space-md py-2.5 rounded-full text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all cursor-pointer text-left w-full" data-view="audio-io">
-                    <span class="material-symbols-outlined text-[20px]">hub</span>
-                    <span class="font-headline-sm text-body-md font-medium">Audio I/O Matrix</span>
-                </button>
-            </nav>
-        </div>
+    <!-- MAIN WORKSPACE -->
+    <main class="w-full pt-20 min-h-screen bg-surface px-space-sm sm:px-gutter pb-space-xl">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-md w-full items-start">
 
-        <div class="px-space-sm flex flex-col gap-space-sm">
-            <div class="p-space-sm rounded-lg bg-surface-container-low border border-white/[0.04]">
-                <div class="flex items-center justify-between mb-1">
-                    <span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Buffer Queue</span>
-                    <span class="font-telemetry-data text-telemetry-data text-secondary">12ms</span>
-                </div>
-                <div class="w-full bg-surface-container-highest h-1 rounded-full overflow-hidden">
-                    <div class="bg-secondary h-full rounded-full w-1/4"></div>
-                </div>
-            </div>
-            <button id="nav-engine-settings" class="flex items-center gap-space-sm px-space-md py-2 rounded-full text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors cursor-pointer text-left w-full">
-                <span class="material-symbols-outlined text-[20px]">tune</span>
-                <span class="font-body-md text-body-md">Engine Settings</span>
-            </button>
-        </div>
-    </aside>
+            <!-- LEFT COLUMN: LANGUAGES & TONE -->
+            <aside class="lg:col-span-3 flex flex-col gap-space-md w-full">
+                <div class="rounded-2xl bg-surface-container-low/90 backdrop-blur-md p-space-md flex flex-col gap-space-md shadow-xl border border-white/[0.04]">
+                    <div class="flex items-center gap-space-xs">
+                        <span class="material-symbols-outlined text-[18px] text-primary">translate</span>
+                        <span class="font-headline-sm text-body-md font-semibold text-on-surface">Languages</span>
+                    </div>
 
-    <!-- ========================================================================= -->
-    <!-- MOBILE FULL-SCREEN SLIDE-OUT DRAWER                                       -->
-    <!-- ========================================================================= -->
-    <div id="mobile-drawer" class="hidden fixed inset-0 z-50 bg-[#0b0f19]/95 backdrop-blur-2xl p-space-md flex flex-col justify-between">
-        <div class="flex flex-col gap-space-md">
-            <div class="flex items-center justify-between pb-space-xs border-b border-white/[0.08]">
-                <span class="font-headline-sm text-headline-sm font-bold text-on-surface">Workstation Deck</span>
-                <button id="close-drawer-btn" class="p-1 rounded-full hover:bg-surface-container-high text-on-surface cursor-pointer">
-                    <span class="material-symbols-outlined text-[24px]">close</span>
-                </button>
-            </div>
-            <nav class="flex flex-col gap-space-xs">
-                <button class="nav-item flex items-center gap-space-sm px-space-md py-3 rounded-2xl bg-primary-container text-on-primary-container font-bold cursor-pointer text-left w-full" data-view="live-studio">
-                    <span class="material-symbols-outlined text-[20px]">settings_voice</span>
-                    <span class="text-body-md">Live Studio</span>
-                </button>
-                <button class="nav-item flex items-center gap-space-sm px-space-md py-3 rounded-2xl bg-surface-container-high text-on-surface hover:bg-surface-variant cursor-pointer text-left w-full" data-view="meeting-logger">
-                    <span class="material-symbols-outlined text-[20px]">history_edu</span>
-                    <span class="text-body-md">Meeting Logger</span>
-                </button>
-                <button class="nav-item flex items-center gap-space-sm px-space-md py-3 rounded-2xl bg-surface-container-high text-on-surface hover:bg-surface-variant cursor-pointer text-left w-full" data-view="voice-synthesis">
-                    <span class="material-symbols-outlined text-[20px]">record_voice_over</span>
-                    <span class="text-body-md">Voice Synthesis Lab</span>
-                </button>
-                <button class="nav-item flex items-center gap-space-sm px-space-md py-3 rounded-2xl bg-surface-container-high text-on-surface hover:bg-surface-variant cursor-pointer text-left w-full" data-view="acoustic-telemetry">
-                    <span class="material-symbols-outlined text-[20px]">equalizer</span>
-                    <span class="text-body-md">Acoustic Telemetry</span>
-                </button>
-                <button class="nav-item flex items-center gap-space-sm px-space-md py-3 rounded-2xl bg-surface-container-high text-on-surface hover:bg-surface-variant cursor-pointer text-left w-full" data-view="audio-io">
-                    <span class="material-symbols-outlined text-[20px]">hub</span>
-                    <span class="text-body-md">Audio I/O Matrix</span>
-                </button>
-            </nav>
-        </div>
-        <div class="flex flex-col gap-space-xs pt-space-xs border-t border-white/[0.08]">
-            <button onclick="document.getElementById('mobile-drawer').classList.add('hidden'); document.getElementById('settings-dialog').showModal();" class="flex items-center justify-center gap-space-xs py-2.5 rounded-xl bg-surface-container-high text-on-surface font-bold text-body-md">
-                <span class="material-symbols-outlined text-[20px]">tune</span>
-                <span>Engine Settings</span>
-            </button>
-        </div>
-    </div>
-
-    <!-- ========================================================================= -->
-    <!-- MOBILE BOTTOM NAVIGATION BAR                                              -->
-    <!-- ========================================================================= -->
-    <nav class="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface-container-lowest/95 backdrop-blur-xl border-t border-white/[0.08] flex items-center justify-around py-2 px-space-xs">
-        <button class="mobile-nav-btn flex flex-col items-center gap-0.5 text-primary cursor-pointer" data-view="live-studio">
-            <span class="material-symbols-outlined text-[20px]">settings_voice</span>
-            <span class="text-[10px] font-bold">Studio</span>
-        </button>
-        <button class="mobile-nav-btn flex flex-col items-center gap-0.5 text-on-surface-variant cursor-pointer" data-view="meeting-logger">
-            <span class="material-symbols-outlined text-[20px]">history_edu</span>
-            <span class="text-[10px] font-bold">Logger</span>
-        </button>
-        <button class="mobile-nav-btn flex flex-col items-center gap-0.5 text-on-surface-variant cursor-pointer" data-view="voice-synthesis">
-            <span class="material-symbols-outlined text-[20px]">record_voice_over</span>
-            <span class="text-[10px] font-bold">Voice Lab</span>
-        </button>
-        <button class="mobile-nav-btn flex flex-col items-center gap-0.5 text-on-surface-variant cursor-pointer" data-view="acoustic-telemetry">
-            <span class="material-symbols-outlined text-[20px]">equalizer</span>
-            <span class="text-[10px] font-bold">Telemetry</span>
-        </button>
-        <button class="mobile-nav-btn flex flex-col items-center gap-0.5 text-on-surface-variant cursor-pointer" onclick="document.getElementById('settings-dialog').showModal();">
-            <span class="material-symbols-outlined text-[20px]">tune</span>
-            <span class="text-[10px] font-bold">Settings</span>
-        </button>
-    </nav>
-
-    <!-- ========================================================================= -->
-    <!-- MAIN WORKSPACE CONTENT CONTAINER (pl-0 on Mobile, pl-64 on Desktop)      -->
-    <!-- ========================================================================= -->
-    <div class="w-full pl-0 lg:pl-64">
-        <!-- ===================================================================== -->
-        <!-- VIEW 1: LIVE STUDIO (DEFAULT MAIN WORKSPACE)                          -->
-        <!-- ===================================================================== -->
-        <main id="view-live-studio" class="deck-view relative w-full pt-16 min-h-screen bg-surface px-space-sm sm:px-gutter pb-24 lg:pb-space-xl">
-            <div class="flex flex-col w-full gap-space-md sm:gap-space-lg">
-                
-                <!-- TOP STUDIO TRANSPORT & VISUALIZER RACK -->
-                <section class="relative w-full rounded-2xl bg-surface-container-low/80 backdrop-blur-xl p-space-sm sm:p-space-md shadow-2xl overflow-hidden border border-white/[0.05]">
-                    <div class="relative z-10 flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-space-sm sm:gap-space-md">
-                        
-                        <!-- Top Badges Row -->
-                        <div class="flex flex-wrap items-center justify-between sm:justify-start gap-space-xs sm:gap-space-sm shrink-0">
-                            <!-- Live Streaming Badge Toggle -->
-                            <button id="streaming-badge-btn" class="flex items-center gap-space-xs px-2.5 sm:px-space-sm py-1.5 rounded-full bg-surface-container-highest shadow-inner hover:bg-surface-variant transition-colors cursor-pointer" title="Toggle Live Translation">
-                                <span class="relative flex h-2.5 w-2.5">
-                                    <span id="streaming-ping" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span>
-                                    <span id="streaming-dot" class="relative inline-flex rounded-full h-2.5 w-2.5 bg-secondary"></span>
-                                </span>
-                                <span id="streaming-badge-text" class="font-label-sm text-[10px] sm:text-label-sm text-secondary tracking-widest uppercase font-bold">LIVE STREAMING</span>
-                            </button>
-                            <!-- Session Elapsed Clock -->
-                            <div class="flex items-center gap-space-xs px-space-sm py-1.5 rounded-full bg-surface-container-high" title="Session Duration">
-                                <span class="material-symbols-outlined text-[14px] sm:text-[16px] text-tertiary">timer</span>
-                                <span class="font-telemetry-data text-xs sm:text-telemetry-data text-on-surface font-bold tracking-wider" id="session-clock">00:25:02</span>
+                    <div class="flex flex-col gap-space-xs relative">
+                        <button id="source-lang-btn" class="group p-space-sm rounded-xl bg-surface-container-high/90 hover:bg-surface-variant flex flex-col gap-1 border border-white/[0.04] hover:border-primary/50 transition-all cursor-pointer w-full text-left shadow-sm" type="button" title="Change the language you speak">
+                            <span class="flex items-center gap-1 text-on-surface-variant font-label-sm text-label-sm group-hover:text-primary transition-colors">
+                                <span>YOU SPEAK</span>
+                                <span class="material-symbols-outlined text-[14px]">arrow_drop_down</span>
+                            </span>
+                            <div class="flex items-center justify-between gap-space-xs">
+                                <div class="flex items-center gap-space-xs min-w-0">
+                                    <span id="source-lang-flag" class="text-xl"></span>
+                                    <span id="source-lang-name" class="font-headline-sm text-body-md font-bold text-on-surface group-hover:text-primary transition-colors"></span>
+                                </div>
+                                <span id="source-lang-code" class="font-telemetry-data text-label-sm text-outline px-1.5 py-0.5 rounded-md bg-surface-container-lowest shrink-0"></span>
                             </div>
+                        </button>
+
+                        <div class="flex justify-center -my-2 relative z-20">
+                            <button id="swap-lang-btn" class="w-8 h-8 rounded-full bg-surface-container-highest hover:bg-secondary hover:text-on-secondary text-primary transition-all flex items-center justify-center shadow-[0_0_12px_rgba(76,215,246,0.3)] cursor-pointer" type="button" title="Swap languages">
+                                <span id="swap-icon" class="material-symbols-outlined text-[16px] transition-transform duration-300">swap_vert</span>
+                            </button>
                         </div>
 
-                        <!-- Center Waveform & Spectrum Visualizer -->
-                        <div class="flex items-center gap-space-sm justify-center min-w-0 py-1">
-                            <div id="visualizer-container" class="w-full max-w-md h-8 sm:h-10 px-2 py-1 rounded-full bg-surface-container-lowest/90 flex items-center justify-between gap-0.5 shadow-inner overflow-hidden">
-                                <div class="spectrum-bar h-3 w-1 rounded-full bg-primary/40 transition-all duration-75"></div>
-                                <div class="spectrum-bar h-5 w-1 rounded-full bg-primary/60 transition-all duration-75"></div>
-                                <div class="spectrum-bar h-7 w-1 rounded-full bg-primary transition-all duration-75"></div>
-                                <div class="spectrum-bar h-9 w-1 rounded-full bg-secondary shadow-[0_0_8px_rgba(76,215,246,0.6)] transition-all duration-75"></div>
-                                <div class="spectrum-bar h-6 w-1 rounded-full bg-secondary transition-all duration-75"></div>
-                                <div class="spectrum-bar h-4 w-1 rounded-full bg-primary transition-all duration-75"></div>
-                                <div class="spectrum-bar h-8 w-1 rounded-full bg-secondary-fixed transition-all duration-75"></div>
-                                <div class="spectrum-bar h-10 w-1 rounded-full bg-primary-container shadow-[0_0_12px_rgba(160,120,255,0.8)] transition-all duration-75"></div>
-                                <div class="spectrum-bar h-7 w-1 rounded-full bg-secondary transition-all duration-75"></div>
-                                <div class="spectrum-bar h-3 w-1 rounded-full bg-primary/50 transition-all duration-75"></div>
-                                <div class="spectrum-bar h-5 w-1 rounded-full bg-secondary/70 transition-all duration-75"></div>
-                                <div class="spectrum-bar h-9 w-1 rounded-full bg-primary transition-all duration-75"></div>
-                                <div class="spectrum-bar h-6 w-1 rounded-full bg-secondary transition-all duration-75"></div>
-                                <div class="spectrum-bar h-8 w-1 rounded-full bg-primary-container transition-all duration-75"></div>
-                                <div class="spectrum-bar h-4 w-1 rounded-full bg-primary/60 transition-all duration-75"></div>
-                                <div class="spectrum-bar h-7 w-1 rounded-full bg-secondary transition-all duration-75"></div>
-                                <div class="spectrum-bar h-10 w-1 rounded-full bg-secondary-container shadow-[0_0_10px_rgba(3,181,211,0.7)] transition-all duration-75"></div>
-                                <div class="spectrum-bar h-5 w-1 rounded-full bg-primary transition-all duration-75"></div>
-                                <div class="spectrum-bar h-8 w-1 rounded-full bg-secondary transition-all duration-75"></div>
-                                <div class="spectrum-bar h-3 w-1 rounded-full bg-primary/40 transition-all duration-75"></div>
-                                <div class="spectrum-bar h-6 w-1 rounded-full bg-primary transition-all duration-75"></div>
-                                <div class="spectrum-bar h-9 w-1 rounded-full bg-secondary shadow-[0_0_8px_rgba(76,215,246,0.6)] transition-all duration-75"></div>
-                                <div class="spectrum-bar h-5 w-1 rounded-full bg-primary transition-all duration-75"></div>
-                                <div class="spectrum-bar h-7 w-1 rounded-full bg-secondary transition-all duration-75"></div>
-                                <div class="spectrum-bar h-4 w-1 rounded-full bg-primary/50 transition-all duration-75"></div>
+                        <button id="target-lang-btn" class="group p-space-sm rounded-xl bg-surface-container-high/90 hover:bg-surface-variant flex flex-col gap-1 border border-white/[0.04] hover:border-secondary/50 transition-all cursor-pointer w-full text-left shadow-sm" type="button" title="Change the translation language">
+                            <span class="flex items-center gap-1 text-on-surface-variant font-label-sm text-label-sm group-hover:text-secondary transition-colors">
+                                <span>TRANSLATE INTO</span>
+                                <span class="material-symbols-outlined text-[14px]">arrow_drop_down</span>
+                            </span>
+                            <div class="flex items-center justify-between gap-space-xs">
+                                <div class="flex items-center gap-space-xs min-w-0">
+                                    <span id="target-lang-flag" class="text-xl"></span>
+                                    <span id="target-lang-name" class="font-headline-sm text-body-md font-bold text-on-surface group-hover:text-secondary transition-colors"></span>
+                                </div>
+                                <span id="target-lang-code" class="font-telemetry-data text-label-sm text-outline px-1.5 py-0.5 rounded-md bg-surface-container-lowest shrink-0"></span>
                             </div>
-                        </div>
+                        </button>
+                    </div>
 
-                        <!-- Transport Actions Row -->
-                        <div class="flex items-center gap-space-xs shrink-0 justify-between sm:justify-end">
-                            <button id="mute-toggle" class="flex-1 sm:flex-initial flex items-center justify-center gap-1 px-space-sm py-2 rounded-full bg-surface-container-high hover:bg-surface-container-highest text-on-surface transition-all text-xs sm:text-body-sm cursor-pointer" type="button">
-                                <span class="material-symbols-outlined text-[18px] text-tertiary" id="mic-icon">mic</span>
-                                <span id="mute-label">Mute</span>
-                            </button>
-                            <button id="pause-toggle" class="flex-1 sm:flex-initial flex items-center justify-center gap-1 px-space-sm py-2 rounded-full bg-surface-container-high hover:bg-surface-container-highest text-on-surface transition-all text-xs sm:text-body-sm cursor-pointer" type="button">
-                                <span class="material-symbols-outlined text-[18px] text-secondary" id="pause-icon">pause_circle</span>
-                                <span id="pause-label">Pause</span>
-                            </button>
-                            <button id="snapshot-btn" class="flex-1 sm:flex-initial flex items-center justify-center gap-1 px-space-sm sm:px-space-md py-2 rounded-full bg-primary-container text-on-primary-container hover:bg-primary font-bold text-xs sm:text-body-sm transition-all cursor-pointer" type="button">
-                                <span class="material-symbols-outlined text-[18px]">bookmark_add</span>
-                                <span>Snapshot</span>
-                            </button>
-                            <button id="archive-btn" class="flex-1 sm:flex-initial flex items-center justify-center gap-1 px-space-sm py-2 rounded-full bg-error-container text-on-error-container hover:bg-error font-bold text-xs sm:text-body-sm transition-all cursor-pointer" type="button">
-                                <span class="material-symbols-outlined text-[18px]">stop_circle</span>
-                                <span>Archive</span>
-                            </button>
+                    <div class="flex flex-col gap-1">
+                        <span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Tone</span>
+                        <div class="flex items-center gap-1">
+                            <button class="btn-tone-pill" type="button" data-tone="polite">Polite</button>
+                            <button class="btn-tone-pill" type="button" data-tone="formal">Formal</button>
+                            <button class="btn-tone-pill" type="button" data-tone="casual">Casual</button>
+                            <button class="btn-tone-pill" type="button" data-tone="technical">Technical</button>
+                        </div>
+                        <span id="translate-model-hint" class="hidden font-label-sm text-label-sm text-on-surface-variant pt-1">Live Translate detects the spoken language itself and has no tone setting.</span>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- RIGHT COLUMN: LIVE CONTROLS & TRANSCRIPT -->
+            <section class="lg:col-span-9 flex flex-col gap-space-md w-full">
+                <div class="rounded-2xl bg-gradient-to-r from-primary-container/30 via-surface-container-low to-surface-container-high/90 backdrop-blur-xl p-space-sm sm:p-space-md flex flex-col xl:flex-row items-start xl:items-center justify-between gap-space-sm shadow-xl border border-primary/25">
+                    <div class="flex items-center gap-space-sm min-w-0">
+                        <div id="master-live-pulse-ring">
+                            <span class="material-symbols-outlined text-[24px]">mic</span>
+                        </div>
+                        <div class="flex flex-col min-w-0">
+                            <span id="master-live-status-pill" class="self-start"></span>
+                            <p class="font-label-sm text-label-sm text-on-surface-variant pt-1">
+                                Speak <span id="hero-src-name" class="text-primary font-bold"></span> ➔ Gemini speaks <span id="hero-tgt-name" class="text-secondary font-bold"></span>
+                            </p>
                         </div>
                     </div>
-                </section>
-
-                <!-- ========================================================================= -->
-                <!-- 3-COLUMN ADAPTIVE STUDIO WORKSPACE (STACKED ON MOBILE)                    -->
-                <!-- ========================================================================= -->
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-md w-full items-start">
-
-                    <!-- ===================================================================== -->
-                    <!-- 2. LEFT COLUMN: CONFIGURABLE LANGUAGE MATRIX (3 Col on Desktop)       -->
-                    <!-- ===================================================================== -->
-                    <aside class="lg:col-span-3 flex flex-col gap-space-md w-full">
-                        
-                        <!-- Configurable Language Matrix Card -->
-                        <div class="rounded-2xl bg-surface-container-low/90 backdrop-blur-md p-space-md flex flex-col gap-space-md shadow-xl border border-white/[0.04]">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-space-xs">
-                                    <span class="material-symbols-outlined text-[18px] text-primary">translate</span>
-                                    <span class="font-headline-sm text-body-md font-semibold text-on-surface">Language Matrix</span>
-                                </div>
-                                <span class="px-space-xs py-0.5 rounded-full bg-primary-container/20 text-primary font-label-sm text-[10px] uppercase font-bold">CONFIGURABLE</span>
-                            </div>
-
-                            <!-- Source & Target Selectors with Swap Button -->
-                            <div class="flex flex-col gap-space-xs relative">
-                                
-                                <!-- Source Channel (Tap to change language you speak) -->
-                                <button id="source-lang-btn" class="group p-space-sm rounded-xl bg-surface-container-high/90 hover:bg-surface-variant flex flex-col gap-1 border border-white/[0.04] hover:border-primary/50 transition-all cursor-pointer w-full text-left shadow-sm" type="button" title="Tap to change the language you are speaking">
-                                    <div class="flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
-                                        <span id="source-channel-tag" class="flex items-center gap-1 group-hover:text-primary transition-colors">
-                                            <span>SOURCE (YOU SPEAK)</span>
-                                            <span class="material-symbols-outlined text-[14px]">arrow_drop_down</span>
-                                        </span>
-                                        <span class="text-secondary font-telemetry-data text-label-sm font-bold">Tap to Pick</span>
-                                    </div>
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center gap-space-xs">
-                                            <span id="source-lang-flag" class="text-xl">🇺🇸</span>
-                                            <span id="source-lang-name" class="font-headline-sm text-body-md font-bold text-on-surface group-hover:text-primary transition-colors">English (US)</span>
-                                        </div>
-                                        <span id="source-lang-code" class="font-telemetry-data text-label-sm text-outline px-1.5 py-0.5 rounded-md bg-surface-container-lowest">EN-US</span>
-                                    </div>
-                                    <span id="source-lang-desc" class="font-label-sm text-label-sm text-on-surface-variant">Realtime Neural VAD • Low Jitter</span>
-                                </button>
-
-                                <!-- Swap Button -->
-                                <div class="flex justify-center -my-2 relative z-20">
-                                    <button id="swap-lang-btn" class="w-8 h-8 rounded-full bg-surface-container-highest hover:bg-secondary hover:text-on-secondary text-primary transition-all flex items-center justify-center shadow-[0_0_12px_rgba(76,215,246,0.3)] cursor-pointer" type="button" title="Swap Source & Target Languages">
-                                        <span id="swap-icon" class="material-symbols-outlined text-[16px] transition-transform duration-300">swap_vert</span>
-                                    </button>
-                                </div>
-
-                                <!-- Target Channel (Tap to change translation language) -->
-                                <button id="target-lang-btn" class="group p-space-sm rounded-xl bg-surface-container-high/90 hover:bg-surface-variant flex flex-col gap-1 border border-white/[0.04] hover:border-secondary/50 transition-all cursor-pointer w-full text-left shadow-sm" type="button" title="Tap to change target synthesis language">
-                                    <div class="flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
-                                        <span id="target-channel-tag" class="flex items-center gap-1 group-hover:text-secondary transition-colors">
-                                            <span>TARGET (TRANSLATION)</span>
-                                            <span class="material-symbols-outlined text-[14px]">arrow_drop_down</span>
-                                        </span>
-                                        <span id="target-tone-tag" class="text-primary font-telemetry-data text-label-sm font-bold bg-primary-container/20 px-1 rounded">Keigo Active</span>
-                                    </div>
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center gap-space-xs">
-                                            <span id="target-lang-flag" class="text-xl">🇯🇵</span>
-                                            <span id="target-lang-name" class="font-headline-sm text-body-md font-bold text-on-surface group-hover:text-secondary transition-colors">Japanese (日本語)</span>
-                                        </div>
-                                        <span id="target-lang-code" class="font-telemetry-data text-label-sm text-outline px-1.5 py-0.5 rounded-md bg-surface-container-lowest">JA-JP</span>
-                                    </div>
-                                    <span id="target-desc" class="font-label-sm text-label-sm text-on-surface-variant">Conversational Business Polite</span>
-                                </button>
-                            </div>
-
-                            <!-- Politeness & Style Quick Bar -->
-                            <div class="flex flex-col gap-1">
-                                <div class="flex items-center justify-between font-label-sm text-label-sm text-on-surface-variant">
-                                    <span class="uppercase">Translation Protocol / Tone</span>
-                                    <button id="target-tone-btn" class="text-secondary font-bold hover:underline cursor-pointer">Change Tone ▾</button>
-                                </div>
-                                <div class="flex items-center gap-1">
-                                    <button class="btn-tone-pill flex-1 py-1 px-1 rounded-lg bg-primary-container text-on-primary-container font-label-sm text-[10px] font-bold text-center cursor-pointer transition-all" data-tone="polite">Polite</button>
-                                    <button class="btn-tone-pill flex-1 py-1 px-1 rounded-lg bg-surface-container-highest text-on-surface-variant hover:text-on-surface font-label-sm text-[10px] text-center cursor-pointer transition-all" data-tone="formal">Formal</button>
-                                    <button class="btn-tone-pill flex-1 py-1 px-1 rounded-lg bg-surface-container-highest text-on-surface-variant hover:text-on-surface font-label-sm text-[10px] text-center cursor-pointer transition-all" data-tone="casual">Casual</button>
-                                    <button class="btn-tone-pill flex-1 py-1 px-1 rounded-lg bg-surface-container-highest text-on-surface-variant hover:text-on-surface font-label-sm text-[10px] text-center cursor-pointer transition-all" data-tone="technical">Technical</button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Hardware Routing Card -->
-                        <div class="rounded-2xl bg-surface-container-low/90 backdrop-blur-md p-space-md flex flex-col gap-space-sm shadow-xl border border-white/[0.04]">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-space-xs">
-                                    <span class="material-symbols-outlined text-[18px] text-secondary">tune</span>
-                                    <span class="font-headline-sm text-body-md font-semibold text-on-surface">Audio Routing</span>
-                                </div>
-                                <span class="font-telemetry-data text-label-sm text-secondary font-bold">24-BIT</span>
-                            </div>
-
-                            <div class="flex flex-col gap-space-xs">
-                                <button id="mic-dropdown-btn" class="flex items-center justify-between p-space-sm rounded-xl bg-surface-container-high hover:bg-surface-variant text-on-surface text-body-sm shadow-inner transition-colors cursor-pointer w-full text-left" type="button">
-                                    <div class="flex items-center gap-space-xs truncate">
-                                        <span class="material-symbols-outlined text-[16px] text-secondary">mic_external_on</span>
-                                        <span id="selected-mic-name" class="truncate">Shure SM7B via Scarlett 2i2 USB</span>
-                                    </div>
-                                    <span class="material-symbols-outlined text-[16px] text-outline">arrow_drop_down</span>
-                                </button>
-                                <button id="monitor-dropdown-btn" class="flex items-center justify-between p-space-sm rounded-xl bg-surface-container-high hover:bg-surface-variant text-on-surface text-body-sm shadow-inner transition-colors cursor-pointer w-full text-left" type="button">
-                                    <div class="flex items-center gap-space-xs truncate">
-                                        <span class="material-symbols-outlined text-[16px] text-tertiary">headphones</span>
-                                        <span id="selected-monitor-name" class="truncate">Studio Monitors (Balanced TRS)</span>
-                                    </div>
-                                    <span class="material-symbols-outlined text-[16px] text-outline">arrow_drop_down</span>
-                                </button>
-                            </div>
-                        </div>
-                    </aside>
-
-                    <!-- ===================================================================== -->
-                    <!-- 3. CENTER COLUMN: MAIN LIVE FEED (6 Col on Desktop, Full on Mobile)   -->
-                    <!-- ===================================================================== -->
-                    <section class="lg:col-span-6 flex flex-col gap-space-md w-full">
-                        <!-- PROMINENT MASTER LIVE TRANSLATION ACTION BAR -->
-                        <div id="master-live-banner" class="rounded-2xl bg-gradient-to-r from-primary-container/30 via-surface-container-low to-surface-container-high/90 backdrop-blur-xl p-space-sm sm:p-space-md flex flex-col xl:flex-row items-start xl:items-center justify-between gap-space-sm shadow-xl border border-primary/25">
-                            <div class="flex items-center gap-space-sm min-w-0">
-                                <div id="master-live-pulse-ring" class="w-11 h-11 rounded-2xl bg-surface-container-lowest border border-white/[0.08] flex items-center justify-center text-primary shrink-0 shadow-inner">
-                                    <span id="master-live-mic-icon" class="material-symbols-outlined text-[24px]">mic</span>
-                                </div>
-                                <div class="flex flex-col min-w-0">
-                                    <div class="flex items-center gap-2">
-                                        <span class="font-headline-sm text-body-md sm:text-headline-sm font-bold text-on-surface">Gemini Live Translator</span>
-                                        <span id="master-live-status-pill" class="px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant font-label-sm text-[10px] font-bold uppercase tracking-wider">Standby</span>
-                                    </div>
-                                    <p class="font-label-sm text-label-sm text-on-surface-variant truncate">
-                                        Speak <span id="hero-src-name" class="text-primary font-bold">English (US)</span> ➔ Gemini speaks <span id="hero-tgt-name" class="text-secondary font-bold">Japanese (日本語)</span>
-                                    </p>
-                                </div>
-                            </div>
-                            <button id="master-live-btn" class="w-full xl:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-primary to-primary-container hover:from-primary-container hover:to-primary text-on-primary font-bold text-body-sm shadow-[0_0_24px_rgba(160,120,255,0.6)] hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer shrink-0" type="button" title="Click to Start or Stop Live Speech-to-Speech Translation">
-                                <span class="material-symbols-outlined text-[20px]" id="master-btn-icon">play_arrow</span>
-                                <span id="master-btn-label">START LIVE TRANSLATION</span>
-                            </button>
-                        </div>
-
-                        <!-- Feed Header Controls Bar -->
-                        <div class="rounded-2xl bg-surface-container-low/90 backdrop-blur-md p-space-sm flex flex-col sm:flex-row items-center justify-between gap-space-sm shadow-xl border border-white/[0.04]">
-                            <!-- View Toggle Tabs -->
-                            <div class="flex items-center gap-1 p-1 rounded-full bg-surface-container-lowest shadow-inner w-full sm:w-auto">
-                                <button class="view-tab-btn flex-1 sm:flex-initial px-space-sm py-1 rounded-full bg-primary-container text-on-primary-container font-label-sm text-label-sm font-bold shadow-sm cursor-pointer transition-all" type="button" data-view="dual">Side-by-Side Dual</button>
-                                <button class="view-tab-btn flex-1 sm:flex-initial px-space-sm py-1 rounded-full text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm cursor-pointer transition-all" type="button" data-view="interleaved">Interleaved</button>
-                                <button class="view-tab-btn flex-1 sm:flex-initial px-space-sm py-1 rounded-full text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm cursor-pointer transition-all" type="button" data-view="diarized">Diarized</button>
-                            </div>
-                        </div>
-
-                        <!-- Transcript Grid -->
-                        <div id="transcript-grid" class="grid grid-cols-1 md:grid-cols-2 gap-space-sm">
-                            <!-- Source Speech Stream -->
-                            <div class="flex flex-col gap-space-sm" id="subcol-source">
-                                <div class="px-space-sm py-1.5 rounded-full bg-surface-container-high/90 flex items-center justify-between border border-white/[0.03]">
-                                    <div class="flex items-center gap-space-xs">
-                                        <span class="w-2 h-2 rounded-full bg-secondary"></span>
-                                        <span id="source-feed-title" class="font-headline-sm text-body-sm font-semibold text-on-surface">Cleaned Speech [EN]</span>
-                                    </div>
-                                    <span class="font-telemetry-data text-label-sm text-on-surface-variant">INCOMING CH-01</span>
-                                </div>
-                                <div class="flex flex-col gap-space-sm" id="source-feed-container">
-                                    <!-- Utterance Card 1 -->
-                                    <div class="utterance-card rounded-xl bg-surface-container-low/95 p-space-sm flex flex-col gap-space-xs shadow-md border-l-2 border-secondary" data-speaker="Elena Rostova">
-                                        <div class="flex items-center justify-between">
-                                            <div class="flex items-center gap-space-xs">
-                                                <span class="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-[10px]">ER</span>
-                                                <span class="font-headline-sm text-body-sm font-bold text-on-surface">Elena Rostova</span>
-                                                <span class="font-label-sm text-label-sm text-outline">Lead Architect</span>
-                                            </div>
-                                            <div class="flex items-center gap-1 font-telemetry-data text-label-sm text-on-surface-variant">
-                                                <span>10:41:52</span>
-                                                <button class="btn-copy-utterance p-0.5 hover:text-secondary cursor-pointer" type="button" title="Copy utterance">
-                                                    <span class="material-symbols-outlined text-[14px]">content_copy</span>
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <p class="font-body-sm text-body-sm text-on-surface leading-relaxed utterance-text">
-                                            We've established the sub-40ms baseline for the multi-tenant audio session router. The primary bottleneck remains tokenization of high-frequency audio tokens.
-                                        </p>
-                                        <div class="flex items-center justify-between pt-1">
-                                            <span class="px-1.5 py-0.5 rounded-full bg-surface-container-highest text-secondary font-telemetry-data text-[10px]">99.4% CONF</span>
-                                            <button class="btn-play-audio hover:text-secondary cursor-pointer" type="button" data-lang="en-US" title="Listen">
-                                                <span class="material-symbols-outlined text-[16px] text-tertiary">volume_up</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Target Speech Stream -->
-                            <div class="flex flex-col gap-space-sm" id="subcol-target">
-                                <div class="px-space-sm py-1.5 rounded-full bg-surface-container-high/90 flex items-center justify-between border border-white/[0.03]">
-                                    <div class="flex items-center gap-space-xs">
-                                        <span class="w-2 h-2 rounded-full bg-primary-container"></span>
-                                        <span id="target-feed-title" class="font-headline-sm text-body-sm font-semibold text-on-surface">Translated Speech [JA]</span>
-                                    </div>
-                                    <span id="target-feed-channel" class="font-telemetry-data text-label-sm text-primary">SYNTH CH-02 (KEIGO)</span>
-                                </div>
-                                <div class="flex flex-col gap-space-sm" id="target-feed-container">
-                                    <!-- Translation Card 1 -->
-                                    <div class="translation-card rounded-xl bg-surface-container-low/95 p-space-sm flex flex-col gap-space-xs shadow-md border-r-2 border-primary-container">
-                                        <div class="flex items-center justify-between">
-                                            <div class="flex items-center gap-space-xs">
-                                                <span class="px-1.5 py-0.5 rounded-full bg-primary-container/20 text-primary font-label-sm text-label-sm font-bold">Elena [AI Synth]</span>
-                                                <span class="font-telemetry-data text-label-sm text-tertiary">+124ms</span>
-                                            </div>
-                                            <div class="flex items-center gap-1 font-telemetry-data text-label-sm text-on-surface-variant">
-                                                <button class="btn-play-audio p-0.5 hover:text-primary cursor-pointer" type="button" data-lang="ja-JP" title="Play audio">
-                                                    <span class="material-symbols-outlined text-[16px] text-primary">play_circle</span>
-                                                </button>
-                                                <button class="btn-copy-utterance p-0.5 hover:text-secondary cursor-pointer" type="button" title="Copy translation">
-                                                    <span class="material-symbols-outlined text-[14px]">content_copy</span>
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <p class="font-body-sm text-body-sm text-on-surface leading-relaxed translation-text">
-                                            マルチテナント音声セッションルーターにおいて、40ミリ秒未満の基準値を達成いたしました。主なボトルネックは高周波オーディオトークンのトークン化に残っております。
-                                        </p>
-                                        <div class="flex items-center justify-between pt-1">
-                                            <span class="font-label-sm text-label-sm text-outline">Glossary: トークン化</span>
-                                            <span class="font-telemetry-data text-[10px] text-primary font-bold">TTS OK</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Realtime Ingestion Banner / Simulation Trigger -->
-                        <div id="streaming-banner" class="rounded-2xl bg-surface-container-highest/90 p-space-sm shadow-xl flex flex-col gap-space-xs border border-secondary/20 hover:border-secondary transition-all">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-space-xs">
-                                    <span class="material-symbols-outlined text-[16px] text-secondary animate-spin">autorenew</span>
-                                    <span class="font-label-sm text-label-sm text-secondary font-bold uppercase tracking-widest">INGESTION BUFFER</span>
-                                </div>
-                                <span class="font-telemetry-data text-label-sm text-outline">CHUNK #1849</span>
-                            </div>
-                            <button id="simulate-chunk-btn" class="p-space-sm rounded-xl bg-surface-container-lowest/80 hover:bg-surface-container-high flex items-center justify-between gap-space-md transition-colors cursor-pointer w-full text-left" type="button" title="Simulate an incoming speech turn">
-                                <span class="text-body-sm text-on-surface truncate">"...tap here to simulate an incoming bilingual speech turn..."</span>
-                                <span class="px-space-sm py-1 rounded-full bg-secondary text-on-secondary font-bold text-xs shrink-0 flex items-center gap-1 shadow-sm">
-                                    <span class="material-symbols-outlined text-[14px]">play_circle</span>
-                                    <span>TEST CHUNK</span>
-                                </span>
-                            </button>
-                        </div>
-                    </section>
-
-                    <!-- ===================================================================== -->
-                    <!-- 4. RIGHT COLUMN: MEETING INTELLIGENCE & EXPORT (3 Col on Desktop)     -->
-                    <!-- ===================================================================== -->
-                    <aside class="lg:col-span-3 flex flex-col gap-space-md w-full">
-                        <div class="rounded-2xl bg-surface-container-low/90 backdrop-blur-md p-space-md flex flex-col gap-space-md shadow-xl border border-white/[0.04]">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-space-xs">
-                                    <span class="material-symbols-outlined text-[20px] text-primary">auto_awesome</span>
-                                    <span class="font-headline-sm text-body-md font-semibold text-on-surface">Intelligence</span>
-                                </div>
-                                <span class="font-telemetry-data text-label-sm text-secondary">Active</span>
-                            </div>
-
-                            <!-- Executive Brief -->
-                            <div class="p-space-sm rounded-xl bg-surface-container-high/90 flex flex-col gap-space-xs">
-                                <span class="font-label-sm text-label-sm text-on-surface-variant uppercase font-bold">Executive Brief</span>
-                                <ul id="executive-brief-list" class="flex flex-col gap-space-xs font-body-sm text-body-sm text-on-surface leading-relaxed">
-                                    <li class="flex items-start gap-space-xs">
-                                        <span class="text-secondary mt-1 font-bold">•</span>
-                                        <span>Sub-40ms latency verified across multilingual voice routing nodes.</span>
-                                    </li>
-                                </ul>
-                            </div>
-
-                            <!-- Action Items -->
-                            <div class="flex flex-col gap-space-xs">
-                                <span class="font-label-sm text-label-sm text-on-surface-variant uppercase font-bold">Action Items</span>
-                                <div class="action-item-card p-space-sm rounded-xl bg-surface-container-high/80 flex flex-col gap-1 shadow-sm">
-                                    <p class="action-item-text font-body-sm text-body-sm text-on-surface font-medium">Benchmark speculative decoding pipeline against concurrent streams.</p>
-                                    <div class="flex items-center justify-between pt-1">
-                                        <span class="text-label-sm text-on-surface-variant">Elena Rostova</span>
-                                        <button class="btn-toggle-action-item text-on-surface-variant hover:text-secondary cursor-pointer" type="button">
-                                            <span class="material-symbols-outlined text-[18px]">check_box_outline_blank</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Export Buttons -->
-                            <div class="pt-space-xs flex flex-col gap-space-xs">
-                                <span class="font-label-sm text-label-sm text-on-surface-variant uppercase font-bold">Export Artifacts</span>
-                                <div class="grid grid-cols-2 gap-space-xs">
-                                    <button id="btn-export-md" class="py-2 px-space-xs rounded-full bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-sm text-label-sm cursor-pointer text-center" type="button">
-                                        Markdown (.md)
-                                    </button>
-                                    <button id="btn-sync-notion" class="py-2 px-space-xs rounded-full bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-sm text-label-sm cursor-pointer text-center" type="button">
-                                        Sync Notion
-                                    </button>
-                                    <button id="btn-copy-log" class="py-2 px-space-xs rounded-full bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-sm text-label-sm cursor-pointer text-center" type="button">
-                                        Copy Log (.txt)
-                                    </button>
-                                    <button id="btn-share-link" class="py-2 px-space-xs rounded-full bg-secondary-container/20 text-secondary font-label-sm text-label-sm font-bold cursor-pointer text-center" type="button">
-                                        Share Link
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </aside>
-                </div>
-            </div>
-        </main>
-
-        <!-- ===================================================================== -->
-        <!-- VIEW 2: MEETING LOGGER VIEW                                           -->
-        <!-- ===================================================================== -->
-        <section id="view-meeting-logger" class="deck-view hidden relative w-full pt-20 min-h-screen bg-surface px-space-sm sm:px-gutter pb-24 lg:pb-space-xl">
-            <div class="flex flex-col gap-space-md max-w-5xl mx-auto">
-                <div class="flex items-center justify-between pb-space-sm border-b border-white/[0.08]">
-                    <h2 class="font-headline-lg text-headline-sm sm:text-headline-lg font-bold text-on-surface">Meeting Minutes Ledger</h2>
-                    <button class="btn-back-to-studio px-space-md py-1.5 rounded-full bg-primary-container text-on-primary-container font-bold text-label-md cursor-pointer">
-                        Back to Studio
-                    </button>
-                </div>
-                <div id="full-logger-container" class="flex flex-col gap-space-sm"></div>
-            </div>
-        </section>
-
-        <!-- ===================================================================== -->
-        <!-- VIEW 3: VOICE SYNTHESIS LAB                                           -->
-        <!-- ===================================================================== -->
-        <section id="view-voice-synthesis" class="deck-view hidden relative w-full pt-20 min-h-screen bg-surface px-space-sm sm:px-gutter pb-24 lg:pb-space-xl">
-            <div class="flex flex-col gap-space-md max-w-5xl mx-auto">
-                <div class="flex items-center justify-between pb-space-sm border-b border-white/[0.08]">
-                    <h2 class="font-headline-lg text-headline-sm sm:text-headline-lg font-bold text-on-surface">Voice Synthesis Calibration</h2>
-                    <button class="btn-back-to-studio px-space-md py-1.5 rounded-full bg-primary-container text-on-primary-container font-bold text-label-md cursor-pointer">
-                        Back to Studio
-                    </button>
-                </div>
-                <div class="p-space-md rounded-2xl bg-surface-container-low border border-white/[0.06] flex flex-col gap-space-sm">
-                    <span class="font-label-md text-label-md text-secondary uppercase font-bold">Interactive Voice Test</span>
-                    <div class="flex flex-col sm:flex-row gap-space-sm">
-                        <input id="tts-custom-input" type="text" value="リアルタイム音声翻訳エンジンは正常に稼働しております。" class="flex-1 bg-surface-container-lowest p-space-sm rounded-xl border border-white/[0.08] text-on-surface text-body-md outline-none" />
-                        <button id="btn-speak-custom" class="px-space-lg py-2 rounded-xl bg-secondary text-on-secondary font-bold hover:bg-secondary-fixed transition-all cursor-pointer">
-                            Speak Target
+                    <div class="flex items-center gap-space-xs w-full xl:w-auto shrink-0">
+                        <button id="mute-toggle" class="flex items-center justify-center gap-1 px-space-sm py-2.5 rounded-full bg-surface-container-high hover:bg-surface-container-highest text-on-surface transition-all text-body-sm cursor-pointer" type="button">
+                            <span class="material-symbols-outlined text-[18px]" id="mic-icon">mic</span>
+                            <span id="mute-label">Mute</span>
+                        </button>
+                        <button id="master-live-btn" type="button" title="Start or stop live translation">
+                            <span class="material-symbols-outlined text-[20px]" id="master-btn-icon">play_arrow</span>
+                            <span id="master-btn-label">START LIVE TRANSLATION</span>
                         </button>
                     </div>
                 </div>
-            </div>
-        </section>
 
-        <!-- ===================================================================== -->
-        <!-- VIEW 4: ACOUSTIC TELEMETRY                                            -->
-        <!-- ===================================================================== -->
-        <section id="view-acoustic-telemetry" class="deck-view hidden relative w-full pt-20 min-h-screen bg-surface px-space-sm sm:px-gutter pb-24 lg:pb-space-xl">
-            <div class="flex flex-col gap-space-md max-w-5xl mx-auto">
-                <div class="flex items-center justify-between pb-space-sm border-b border-white/[0.08]">
-                    <h2 class="font-headline-lg text-headline-sm sm:text-headline-lg font-bold text-on-surface">Acoustic Telemetry</h2>
-                    <button class="btn-back-to-studio px-space-md py-1.5 rounded-full bg-primary-container text-on-primary-container font-bold text-label-md cursor-pointer">
-                        Back to Studio
-                    </button>
-                </div>
-                <div class="p-space-md rounded-2xl bg-surface-container-low border border-white/[0.05] flex items-center justify-between">
-                    <div class="flex flex-col">
-                        <span class="font-bold text-on-surface">Gemini Live WebSocket Probe</span>
-                        <span class="text-on-surface-variant text-body-sm">Measure live round-trip latency to Argon cluster.</span>
+                <div class="flex flex-col gap-space-sm">
+                    <div class="flex items-center justify-end gap-space-xs">
+                        <button id="btn-copy-log" class="py-1.5 px-space-sm rounded-full bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-sm text-label-sm cursor-pointer" type="button">Copy</button>
+                        <button id="btn-export-md" class="py-1.5 px-space-sm rounded-full bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-sm text-label-sm cursor-pointer" type="button">Download .md</button>
+                        <button id="btn-clear-log" class="py-1.5 px-space-sm rounded-full bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-sm text-label-sm cursor-pointer" type="button">Clear</button>
                     </div>
-                    <button id="btn-probe-ping" class="px-space-md py-2 rounded-full bg-secondary-container/20 text-secondary hover:bg-secondary-container hover:text-on-secondary-container font-bold text-label-md cursor-pointer">
-                        Run Ping Probe
-                    </button>
-                </div>
-            </div>
-        </section>
 
-        <!-- ===================================================================== -->
-        <!-- VIEW 5: AUDIO I/O MATRIX                                              -->
-        <!-- ===================================================================== -->
-        <section id="view-audio-io" class="deck-view hidden relative w-full pt-20 min-h-screen bg-surface px-space-sm sm:px-gutter pb-24 lg:pb-space-xl">
-            <div class="flex flex-col gap-space-md max-w-5xl mx-auto">
-                <div class="flex items-center justify-between pb-space-sm border-b border-white/[0.08]">
-                    <h2 class="font-headline-lg text-headline-sm sm:text-headline-lg font-bold text-on-surface">Audio I/O Matrix</h2>
-                    <button class="btn-back-to-studio px-space-md py-1.5 rounded-full bg-primary-container text-on-primary-container font-bold text-label-md cursor-pointer">
-                        Back to Studio
-                    </button>
-                </div>
-                <div class="flex items-center justify-between p-space-md rounded-2xl bg-surface-container-low border border-white/[0.05]">
-                    <span class="font-bold text-on-surface">440Hz Sine Calibration Tone</span>
-                    <button id="btn-play-test-tone" class="px-space-md py-2 rounded-full bg-primary-container text-on-primary-container font-bold text-label-md cursor-pointer">
-                        Play Tone
-                    </button>
-                </div>
-            </div>
-        </section>
-    </div>
+                    <div class="hidden md:grid grid-cols-2 gap-space-sm">
+                        <div class="px-space-sm py-1.5 rounded-full bg-surface-container-high/90 flex items-center gap-space-xs border border-white/[0.03]">
+                            <span class="w-2 h-2 rounded-full bg-secondary"></span>
+                            <span id="source-feed-title" class="font-headline-sm text-body-sm font-semibold text-on-surface"></span>
+                        </div>
+                        <div class="px-space-sm py-1.5 rounded-full bg-surface-container-high/90 flex items-center gap-space-xs border border-white/[0.03]">
+                            <span class="w-2 h-2 rounded-full bg-primary-container"></span>
+                            <span id="target-feed-title" class="font-headline-sm text-body-sm font-semibold text-on-surface"></span>
+                        </div>
+                    </div>
 
-    <!-- ========================================================================= -->
-    <!-- ACCESSIBLE DIALOGS & MODALS                                               -->
-    <!-- ========================================================================= -->
+                    <p id="transcript-empty" class="p-space-lg rounded-xl bg-surface-container-low/60 border border-white/[0.04] text-center font-body-sm text-body-sm text-on-surface-variant">
+                        Press Start Live and speak. Your words and the translation will appear here.
+                    </p>
+                    <div id="transcript-rows" class="flex flex-col gap-space-sm"></div>
+                </div>
+            </section>
+        </div>
+    </main>
 
-    <!-- 1. LANGUAGE PICKER MODAL -->
+    <!-- LANGUAGE PICKER MODAL -->
     <dialog id="language-dialog" class="p-0 rounded-3xl bg-surface-container-low border border-white/[0.12] text-on-surface shadow-2xl max-w-lg w-[95vw] outline-none">
         <div class="p-space-md sm:p-space-lg flex flex-col gap-space-sm sm:gap-space-md max-h-[85vh]">
             <div class="flex items-center justify-between pb-space-xs border-b border-white/[0.08]">
@@ -782,154 +269,44 @@
         </div>
     </dialog>
 
-    <!-- 2. TONE PICKER MODAL -->
-    <dialog id="tone-dialog" class="p-0 rounded-3xl bg-surface-container-low border border-white/[0.12] text-on-surface shadow-2xl max-w-md w-[95vw] outline-none">
+    <!-- SETTINGS MODAL -->
+    <dialog id="settings-dialog" class="p-0 rounded-3xl bg-surface-container-low border border-white/[0.12] text-on-surface shadow-2xl max-w-lg w-[95vw] outline-none">
         <div class="p-space-md sm:p-space-lg flex flex-col gap-space-md">
             <div class="flex items-center justify-between pb-space-xs border-b border-white/[0.08]">
-                <span class="font-headline-sm text-body-md sm:text-headline-sm font-bold">Select Politeness / Tone</span>
-                <button id="close-tone-btn" class="p-1 rounded-full hover:bg-surface-container-high text-on-surface-variant cursor-pointer" type="button">
-                    <span class="material-symbols-outlined text-[20px]">close</span>
-                </button>
-            </div>
-            <div class="flex flex-col gap-space-xs">
-                <button class="tone-option-btn flex flex-col gap-0.5 p-space-sm rounded-2xl bg-surface-container-high hover:bg-surface-variant text-left transition-all cursor-pointer border border-transparent hover:border-secondary" data-tone="polite">
-                    <div class="flex items-center justify-between">
-                        <span class="font-bold text-on-surface">Conversational Polite (丁寧語)</span>
-                        <span class="text-secondary font-mono text-xs">DEFAULT</span>
-                    </div>
-                    <span class="text-on-surface-variant text-body-sm">Standard business polite phrasing.</span>
-                </button>
-                <button class="tone-option-btn flex flex-col gap-0.5 p-space-sm rounded-2xl bg-surface-container-high hover:bg-surface-variant text-left transition-all cursor-pointer border border-transparent hover:border-secondary" data-tone="formal">
-                    <div class="flex items-center justify-between">
-                        <span class="font-bold text-on-surface">Executive Formal (尊敬語・謙譲語)</span>
-                        <span class="text-primary font-mono text-xs">EXECUTIVE</span>
-                    </div>
-                    <span class="text-on-surface-variant text-body-sm">Strict honorific protocol for keynotes and clients.</span>
-                </button>
-                <button class="tone-option-btn flex flex-col gap-0.5 p-space-sm rounded-2xl bg-surface-container-high hover:bg-surface-variant text-left transition-all cursor-pointer border border-transparent hover:border-secondary" data-tone="casual">
-                    <div class="flex items-center justify-between">
-                        <span class="font-bold text-on-surface">Casual Conversational (日常会話)</span>
-                        <span class="text-outline font-mono text-xs">CASUAL</span>
-                    </div>
-                    <span class="text-on-surface-variant text-body-sm">Friendly, colloquial, and warm informal dialogue.</span>
-                </button>
-                <button class="tone-option-btn flex flex-col gap-0.5 p-space-sm rounded-2xl bg-surface-container-high hover:bg-surface-variant text-left transition-all cursor-pointer border border-transparent hover:border-secondary" data-tone="technical">
-                    <div class="flex items-center justify-between">
-                        <span class="font-bold text-on-surface">Direct Technical (常体・簡潔)</span>
-                        <span class="text-tertiary font-mono text-xs">CONCISE</span>
-                    </div>
-                    <span class="text-on-surface-variant text-body-sm">Direct, terse engineering syntax.</span>
-                </button>
-            </div>
-        </div>
-    </dialog>
-
-    <!-- 3. ENGINE SETTINGS MODAL -->
-    <dialog id="settings-dialog" class="p-0 rounded-3xl bg-surface-container-low border border-white/[0.12] text-on-surface shadow-2xl max-w-lg w-[95vw] outline-none">
-        <div class="p-space-md sm:p-space-lg flex flex-col gap-space-md max-h-[90vh] overflow-y-auto">
-            <div class="flex items-center justify-between pb-space-xs border-b border-white/[0.08]">
-                <div class="flex items-center gap-space-xs">
-                    <span class="material-symbols-outlined text-[24px] text-primary">tune</span>
-                    <span class="font-headline-sm text-body-md sm:text-headline-sm font-bold">Engine &amp; Translation Settings</span>
-                </div>
+                <span class="font-headline-sm text-body-md sm:text-headline-sm font-bold">Settings</span>
                 <button id="close-settings-btn" class="p-1 rounded-full hover:bg-surface-container-high text-on-surface-variant cursor-pointer" type="button">
                     <span class="material-symbols-outlined text-[20px]">close</span>
                 </button>
             </div>
-            
-            <div class="flex flex-col gap-space-md">
-                <!-- Translation Language Configuration -->
-                <div class="p-space-sm rounded-2xl bg-surface-container-high/60 border border-white/[0.06] flex flex-col gap-space-xs">
-                    <span class="font-label-sm text-label-sm text-secondary uppercase font-bold">Language Translation Routing</span>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-space-xs">
-                        <div class="flex flex-col gap-1">
-                            <label class="font-label-sm text-label-sm text-on-surface-variant">Source (You Speak)</label>
-                            <select id="setting-source-lang" class="bg-surface-container-highest text-on-surface p-space-sm rounded-xl border border-white/[0.08] outline-none text-xs"></select>
-                        </div>
-                        <div class="flex flex-col gap-1">
-                            <label class="font-label-sm text-label-sm text-on-surface-variant">Target (Gemini Speaks)</label>
-                            <select id="setting-target-lang" class="bg-surface-container-highest text-on-surface p-space-sm rounded-xl border border-white/[0.08] outline-none text-xs"></select>
-                        </div>
-                    </div>
-                    <div class="flex flex-col gap-1 pt-1">
-                        <label class="font-label-sm text-label-sm text-on-surface-variant">Target Politeness Tone</label>
-                        <select id="setting-tone-select" class="bg-surface-container-highest text-on-surface p-space-sm rounded-xl border border-white/[0.08] outline-none text-xs">
-                            <option value="polite">Conversational Business Polite (丁寧語 / Keigo)</option>
-                            <option value="formal">Executive Formal (尊敬語・謙譲語)</option>
-                            <option value="casual">Casual Conversational (日常会話)</option>
-                            <option value="technical">Direct Technical (常体 / 簡潔)</option>
-                        </select>
-                    </div>
-                </div>
 
-                <!-- API Key -->
-                <div class="flex flex-col gap-1">
-                    <div class="flex items-center justify-between">
-                        <label class="font-label-sm text-label-sm text-on-surface-variant uppercase">Google AI Studio API Key</label>
-                        <span class="text-secondary text-[11px]">Saved in browser</span>
-                    </div>
-                    <div class="relative flex items-center">
-                        <input id="setting-api-key" type="password" placeholder="AIzaSy..." class="w-full bg-surface-container-high text-on-surface p-space-sm rounded-xl border border-white/[0.08] outline-none pr-10 font-mono text-xs" />
-                        <button id="toggle-key-visibility" class="absolute right-2 text-outline hover:text-on-surface cursor-pointer p-1" type="button">
-                            <span class="material-symbols-outlined text-[18px]">visibility</span>
-                        </button>
-                    </div>
+            <div class="flex flex-col gap-1">
+                <div class="flex items-center justify-between">
+                    <label for="setting-api-key" class="font-label-sm text-label-sm text-on-surface-variant uppercase">Google AI Studio API Key</label>
+                    <span class="text-secondary text-[11px]">Saved in this browser</span>
                 </div>
+                <div class="relative flex items-center">
+                    <input id="setting-api-key" type="password" placeholder="AIzaSy..." class="w-full bg-surface-container-high text-on-surface p-space-sm rounded-xl border border-white/[0.08] outline-none pr-10 font-mono text-xs" />
+                    <button id="toggle-key-visibility" class="absolute right-2 text-outline hover:text-on-surface cursor-pointer p-1" type="button">
+                        <span class="material-symbols-outlined text-[18px]">visibility</span>
+                    </button>
+                </div>
+            </div>
 
-                <!-- AI Model Select -->
-                <div class="flex flex-col gap-1">
-                    <label class="font-label-sm text-label-sm text-on-surface-variant uppercase">Gemini Speech Model</label>
-                    <select id="setting-model-select" class="bg-surface-container-high text-on-surface p-space-sm rounded-xl border border-white/[0.08] outline-none text-xs">
-                        <option value="models/gemini-2.0-flash-exp" selected>Gemini 2.0 Flash Live (Official Multimodal Live API)</option>
-                        <option value="models/gemini-2.5-argon">Gemini 2.5 Argon Live (Experimental S2S Direct)</option>
-                        <option value="models/gemini-2.0-flash">Gemini 2.0 Flash (Bidi Production)</option>
-                    </select>
-                </div>
+            <div class="flex flex-col gap-1">
+                <label for="setting-model-select" class="font-label-sm text-label-sm text-on-surface-variant uppercase">Model</label>
+                <select id="setting-model-select" class="bg-surface-container-high text-on-surface p-space-sm rounded-xl border border-white/[0.08] outline-none text-xs"></select>
             </div>
 
             <div class="flex items-center justify-end gap-space-sm pt-space-xs border-t border-white/[0.08]">
-                <button id="cancel-settings-btn" class="px-space-md py-2 rounded-full text-on-surface-variant hover:text-on-surface text-label-md cursor-pointer" type="button">
-                    Cancel
-                </button>
-                <button id="save-settings-btn" class="px-space-lg py-2 rounded-full bg-primary-container text-on-primary-container font-bold text-label-md hover:bg-primary transition-all shadow-md cursor-pointer" type="button">
-                    Save Configuration
-                </button>
+                <button id="cancel-settings-btn" class="px-space-md py-2 rounded-full text-on-surface-variant hover:text-on-surface text-label-md cursor-pointer" type="button">Cancel</button>
+                <button id="save-settings-btn" class="px-space-lg py-2 rounded-full bg-primary-container text-on-primary-container font-bold text-label-md hover:bg-primary transition-all shadow-md cursor-pointer" type="button">Save</button>
             </div>
         </div>
     </dialog>
 
-    <!-- 4. HARDWARE DEVICE PICKER DIALOG -->
-    <dialog id="device-dialog" class="p-0 rounded-3xl bg-surface-container-low border border-white/[0.12] text-on-surface shadow-2xl max-w-sm w-[90vw] outline-none">
-        <div class="p-space-md flex flex-col gap-space-sm">
-            <div class="flex items-center justify-between pb-1 border-b border-white/[0.08]">
-                <span id="device-dialog-title" class="font-headline-sm text-body-md font-bold text-on-surface">Select Audio Device</span>
-                <button id="close-device-btn" class="p-1 rounded-full hover:bg-surface-container-high text-on-surface-variant cursor-pointer">
-                    <span class="material-symbols-outlined text-[18px]">close</span>
-                </button>
-            </div>
-            <div id="device-list" class="flex flex-col gap-1"></div>
-        </div>
-    </dialog>
+    <!-- TOAST NOTIFICATIONS -->
+    <div id="toast-container" class="fixed bottom-6 right-4 sm:right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
-    <!-- 5. ARCHIVE CONFIRMATION DIALOG -->
-    <dialog id="archive-dialog" class="p-0 rounded-3xl bg-surface-container-low border border-white/[0.12] text-on-surface shadow-2xl max-w-md w-[90vw] outline-none">
-        <div class="p-space-md sm:p-space-lg flex flex-col gap-space-md">
-            <span class="font-headline-sm text-headline-sm font-bold">Archive Live Session?</span>
-            <div class="p-space-sm rounded-xl bg-surface-container-lowest/80 text-body-sm text-on-surface-variant flex flex-col gap-1">
-                <div>Elapsed Duration: <span id="archive-duration" class="text-secondary font-bold font-mono">00:25:02</span></div>
-                <div>Routing: <span id="archive-routing" class="text-on-surface font-bold">English (US) → Japanese (日本語)</span></div>
-            </div>
-            <div class="flex items-center justify-end gap-space-sm">
-                <button id="cancel-archive-btn" class="px-space-md py-2 rounded-full text-on-surface-variant text-label-md cursor-pointer" type="button">Cancel</button>
-                <button id="confirm-archive-btn" class="px-space-lg py-2 rounded-full bg-error-container text-on-error-container font-bold text-label-md cursor-pointer" type="button">Confirm &amp; Export</button>
-            </div>
-        </div>
-    </dialog>
-
-    <!-- TOAST HUD NOTIFICATIONS -->
-    <div id="toast-container" class="fixed bottom-16 sm:bottom-6 right-4 sm:right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
-
-    <!-- MAIN MODULAR JAVASCRIPT APP -->
     <script type="module" src="js/app.js"></script>
 </body>
 
