@@ -486,10 +486,10 @@
                     <!-- ===================================================================== -->
                     <section class="lg:col-span-6 flex flex-col gap-space-md w-full">
                         <!-- PROMINENT MASTER LIVE TRANSLATION ACTION BAR -->
-                        <div id="master-live-banner" class="rounded-2xl bg-gradient-to-r from-primary-container/30 via-surface-container-low to-surface-container-high/90 backdrop-blur-xl p-space-sm sm:p-space-md flex flex-col sm:flex-row items-center justify-between gap-space-sm shadow-xl border border-primary/25">
-                            <div class="flex items-center gap-space-sm w-full sm:w-auto">
-                                <div id="master-live-pulse-ring" class="w-12 h-12 rounded-2xl bg-surface-container-lowest border border-white/[0.08] flex items-center justify-center text-primary shrink-0 shadow-inner">
-                                    <span id="master-live-mic-icon" class="material-symbols-outlined text-[26px]">mic</span>
+                        <div id="master-live-banner" class="rounded-2xl bg-gradient-to-r from-primary-container/30 via-surface-container-low to-surface-container-high/90 backdrop-blur-xl p-space-sm sm:p-space-md flex flex-col xl:flex-row items-start xl:items-center justify-between gap-space-sm shadow-xl border border-primary/25">
+                            <div class="flex items-center gap-space-sm min-w-0">
+                                <div id="master-live-pulse-ring" class="w-11 h-11 rounded-2xl bg-surface-container-lowest border border-white/[0.08] flex items-center justify-center text-primary shrink-0 shadow-inner">
+                                    <span id="master-live-mic-icon" class="material-symbols-outlined text-[24px]">mic</span>
                                 </div>
                                 <div class="flex flex-col min-w-0">
                                     <div class="flex items-center gap-2">
@@ -497,16 +497,14 @@
                                         <span id="master-live-status-pill" class="px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant font-label-sm text-[10px] font-bold uppercase tracking-wider">Standby</span>
                                     </div>
                                     <p class="font-label-sm text-label-sm text-on-surface-variant truncate">
-                                        Speak <span id="hero-src-name" class="text-primary font-bold">English (US)</span> ➔ Gemini synthesizes <span id="hero-tgt-name" class="text-secondary font-bold">Japanese (日本語)</span>
+                                        Speak <span id="hero-src-name" class="text-primary font-bold">English (US)</span> ➔ Gemini speaks <span id="hero-tgt-name" class="text-secondary font-bold">Japanese (日本語)</span>
                                     </p>
                                 </div>
                             </div>
-                            <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
-                                <button id="master-live-btn" class="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-primary to-primary-container hover:from-primary-container hover:to-primary text-on-primary font-bold text-body-sm shadow-[0_0_24px_rgba(160,120,255,0.6)] hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer" type="button" title="Click to Start or Stop Live Speech-to-Speech Translation">
-                                    <span class="material-symbols-outlined text-[20px]" id="master-btn-icon">play_arrow</span>
-                                    <span id="master-btn-label">START LIVE TRANSLATION</span>
-                                </button>
-                            </div>
+                            <button id="master-live-btn" class="w-full xl:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-primary to-primary-container hover:from-primary-container hover:to-primary text-on-primary font-bold text-body-sm shadow-[0_0_24px_rgba(160,120,255,0.6)] hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer shrink-0" type="button" title="Click to Start or Stop Live Speech-to-Speech Translation">
+                                <span class="material-symbols-outlined text-[20px]" id="master-btn-icon">play_arrow</span>
+                                <span id="master-btn-label">START LIVE TRANSLATION</span>
+                            </button>
                         </div>
 
                         <!-- Feed Header Controls Bar -->
