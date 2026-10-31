@@ -129,6 +129,12 @@ function updateLanguageUI() {
         }
     });
 
+    // Hero Banner Language Route
+    const heroSrcName = document.getElementById('hero-src-name');
+    const heroTgtName = document.getElementById('hero-tgt-name');
+    if (heroSrcName) heroSrcName.textContent = src.name;
+    if (heroTgtName) heroTgtName.textContent = tgt.name;
+
     // Sync settings dropdowns
     const setSrc = document.getElementById('setting-source-lang');
     const setTgt = document.getElementById('setting-target-lang');
@@ -221,6 +227,16 @@ function triggerGeminiLiveToggle(forceRestart = false) {
         updateStreamingBadgeUI(false);
         showToast("Gemini Live Session Disconnected.", "info", "stop");
     } else {
+        if (!state.apiKey) {
+            showToast("Please enter your Gemini API Key in Settings to start.", "error", "key");
+            openSettings();
+            setTimeout(() => {
+                const keyInput = document.getElementById('setting-api-key');
+                if (keyInput) keyInput.focus();
+            }, 150);
+            return;
+        }
+
         connectGeminiLive({
             apiKey: state.apiKey,
             model: state.selectedModel,
@@ -246,19 +262,55 @@ function updateStreamingBadgeUI(isActive) {
     const dot = document.getElementById('streaming-dot');
     const recDot = document.getElementById('rec-dot');
     const recLabel = document.getElementById('rec-label');
+    const recToggleBtn = document.getElementById('rec-toggle-btn');
+    const masterLiveBtn = document.getElementById('master-live-btn');
+    const masterBtnLabel = document.getElementById('master-btn-label');
+    const masterBtnIcon = document.getElementById('master-btn-icon');
+    const masterStatusPill = document.getElementById('master-live-status-pill');
+    const masterPulseRing = document.getElementById('master-live-pulse-ring');
 
     if (isActive) {
         if (text) text.textContent = 'LIVE TRANSLATION STREAMING';
         if (ping) ping.className = 'animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75';
         if (dot) dot.className = 'relative inline-flex rounded-full h-2.5 w-2.5 bg-secondary';
-        if (recDot) recDot.className = 'h-2 w-2 rounded-full bg-error animate-pulse';
-        if (recLabel) recLabel.textContent = 'Rec Active';
+        if (recDot) recDot.textContent = 'stop';
+        if (recLabel) recLabel.textContent = 'Stop Live';
+        if (recToggleBtn) {
+            recToggleBtn.className = 'flex items-center gap-space-xs px-3 sm:px-4 py-1.5 rounded-full bg-error text-on-error hover:bg-error-container hover:text-on-error-container transition-all font-bold text-xs sm:text-label-sm shadow-[0_0_16px_rgba(255,80,80,0.5)] cursor-pointer animate-pulse';
+        }
+        if (masterBtnLabel) masterBtnLabel.textContent = 'STOP LIVE TRANSLATION';
+        if (masterBtnIcon) masterBtnIcon.textContent = 'stop';
+        if (masterLiveBtn) {
+            masterLiveBtn.className = 'flex-1 sm:flex-initial flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-error text-on-error font-bold text-body-sm shadow-[0_0_24px_rgba(255,80,80,0.6)] hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer animate-pulse';
+        }
+        if (masterStatusPill) {
+            masterStatusPill.textContent = 'LIVE STREAMING';
+            masterStatusPill.className = 'px-2 py-0.5 rounded-full bg-secondary/20 text-secondary font-label-sm text-[10px] font-bold uppercase tracking-wider animate-pulse';
+        }
+        if (masterPulseRing) {
+            masterPulseRing.className = 'w-12 h-12 rounded-2xl bg-secondary/20 border border-secondary/40 flex items-center justify-center text-secondary shrink-0 shadow-inner animate-pulse';
+        }
     } else {
         if (text) text.textContent = 'STREAMING STANDBY';
         if (ping) ping.className = 'hidden';
         if (dot) dot.className = 'relative inline-flex rounded-full h-2.5 w-2.5 bg-outline';
-        if (recDot) recDot.className = 'h-2 w-2 rounded-full bg-outline';
-        if (recLabel) recLabel.textContent = 'Rec Paused';
+        if (recDot) recDot.textContent = 'play_arrow';
+        if (recLabel) recLabel.textContent = 'Start Live';
+        if (recToggleBtn) {
+            recToggleBtn.className = 'flex items-center gap-space-xs px-3 sm:px-4 py-1.5 rounded-full bg-primary-container text-on-primary-container hover:bg-primary hover:text-on-primary transition-all font-bold text-xs sm:text-label-sm shadow-[0_0_16px_rgba(160,120,255,0.4)] cursor-pointer';
+        }
+        if (masterBtnLabel) masterBtnLabel.textContent = 'START LIVE TRANSLATION';
+        if (masterBtnIcon) masterBtnIcon.textContent = 'play_arrow';
+        if (masterLiveBtn) {
+            masterLiveBtn.className = 'flex-1 sm:flex-initial flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-primary to-primary-container hover:from-primary-container hover:to-primary text-on-primary font-bold text-body-sm shadow-[0_0_24px_rgba(160,120,255,0.6)] hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer';
+        }
+        if (masterStatusPill) {
+            masterStatusPill.textContent = 'STANDBY';
+            masterStatusPill.className = 'px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant font-label-sm text-[10px] font-bold uppercase tracking-wider';
+        }
+        if (masterPulseRing) {
+            masterPulseRing.className = 'w-12 h-12 rounded-2xl bg-surface-container-lowest border border-white/[0.08] flex items-center justify-center text-primary shrink-0 shadow-inner';
+        }
     }
 }
 
@@ -458,6 +510,75 @@ function switchDeckView(viewId) {
 }
 
 // -----------------------------------------------------------------------------
+// Interactive Ingestion Buffer Speech Turn Simulation
+// -----------------------------------------------------------------------------
+function simulateBilingualTurn() {
+    const src = state.sourceLang;
+    const tgt = state.targetLang;
+    const timeStr = new Date().toTimeString().split(' ')[0];
+
+    const samplePool = [
+        {
+            srcEn: "Good morning team, our multilingual live speech pipeline is performing with sub-40 millisecond latency.",
+            translations: {
+                'JA-JP': "おはようございます。多言語ライブ音声パイプラインは40ミリ秒未満の低レイテンシで動作しております。",
+                'NL-NL': "Goedemorgen team, onze meertalige live spraakpijplijn presteert met een latentie van minder dan 40 milliseconden.",
+                'ES-ES': "Buenos días equipo, nuestra canalización de voz en vivo multilingüe está funcionando con una latencia inferior a 40 milisegundos.",
+                'FR-FR': "Bonjour à toute l'équipe, notre pipeline vocal multilingue en direct fonctionne avec une latence inférieure à 40 millisecondes.",
+                'DE-DE': "Guten Morgen Team, unsere mehrsprachige Live-Sprachpipeline läuft mit einer Latenz von unter 40 Millisekunden.",
+                'ZH-CN': "大家早上好，我们的多语言实时语音流水线正在以低于40毫秒的延迟稳定运行。",
+                'KO-KR': "좋은 아침입니다. 다국어 라이브 음성 파이프라인이 40밀리초 미만의 지연 시간으로 원활하게 작동하고 있습니다."
+            }
+        },
+        {
+            srcEn: "Could you please confirm if the client received the technical executive brief?",
+            translations: {
+                'JA-JP': "クライアントが技術概要書を受け取られたかどうかをご確認いただけますでしょうか？",
+                'NL-NL': "Kunt u bevestigen of de klant het technisch briefingdocument heeft ontvangen?",
+                'ES-ES': "¿Podría confirmar si el cliente recibió el informe técnico ejecutivo?",
+                'FR-FR': "Pourriez-vous confirmer si le client a bien reçu le compte-rendu technique ?",
+                'DE-DE': "Könnten Sie bitte bestätigen, ob der Kunde die technische Zusammenfassung erhalten hat?",
+                'ZH-CN': "请确认一下客户是否已经收到了技术执行简报？",
+                'KO-KR': "고객사에서 기술 요약 보고서를 전달받았는지 확인해 주실 수 있나요?"
+            }
+        }
+    ];
+
+    const sample = samplePool[Math.floor(Math.random() * samplePool.length)];
+    let sourceText = sample.srcEn;
+    if (src.code === 'JA-JP') sourceText = sample.translations['JA-JP'];
+    else if (sample.translations[src.code]) sourceText = sample.translations[src.code];
+
+    let targetText = sample.translations[tgt.code] || `[${tgt.name} Translation] ${sample.srcEn}`;
+
+    // Append to source feed
+    const sourceContainer = document.getElementById('source-feed-container');
+    if (sourceContainer) {
+        const card = document.createElement('div');
+        card.className = 'utterance-card rounded-xl bg-surface-container-low/95 p-space-sm flex flex-col gap-space-xs shadow-md border-l-2 border-secondary animate-pulse';
+        card.innerHTML = `
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-space-xs">
+                    <span class="w-5 h-5 rounded-full bg-secondary/20 text-secondary flex items-center justify-center font-bold text-[10px]">YOU</span>
+                    <span class="font-headline-sm text-body-sm font-bold text-on-surface">You (${src.name})</span>
+                    <span class="font-label-sm text-label-sm text-outline">Simulated</span>
+                </div>
+                <span class="font-telemetry-data text-label-sm text-on-surface-variant">${timeStr}</span>
+            </div>
+            <p class="font-body-sm text-body-sm text-on-surface leading-relaxed">${sourceText}</p>
+        `;
+        sourceContainer.prepend(card);
+    }
+
+    // Append to target feed and speak
+    setTimeout(() => {
+        renderIncomingGeminiTurn(targetText);
+        speakText(targetText, tgt.code);
+        showToast(`Simulated translation received in ${tgt.name}!`, "success", "record_voice_over");
+    }, 400);
+}
+
+// -----------------------------------------------------------------------------
 // DOM Event Listeners Initialization
 // -----------------------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
@@ -521,9 +642,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Transport Controls
+    // Transport Controls & Live Translation Master Triggers
     document.getElementById('rec-toggle-btn')?.addEventListener('click', () => triggerGeminiLiveToggle());
     document.getElementById('streaming-badge-btn')?.addEventListener('click', () => triggerGeminiLiveToggle());
+    document.getElementById('master-live-btn')?.addEventListener('click', () => triggerGeminiLiveToggle());
+    document.getElementById('simulate-chunk-btn')?.addEventListener('click', () => simulateBilingualTurn());
 
     const muteBtn = document.getElementById('mute-toggle');
     const micIcon = document.getElementById('mic-icon');

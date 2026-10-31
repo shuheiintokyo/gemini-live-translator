@@ -153,10 +153,10 @@
 
             <!-- Right Controls -->
             <div class="flex items-center gap-1.5 sm:gap-space-sm shrink-0">
-                <!-- Recording Toggle Button -->
-                <button id="rec-toggle-btn" class="flex items-center gap-space-xs px-2.5 sm:px-space-sm py-1.5 rounded-full bg-surface-container-high hover:bg-surface-variant hover:text-on-surface text-on-surface-variant transition-colors border border-white/[0.08] cursor-pointer" type="button" title="Toggle Recording & Streaming">
-                    <span id="rec-dot" class="h-2 w-2 rounded-full bg-error animate-pulse"></span>
-                    <span id="rec-label" class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface font-bold text-xs sm:text-label-sm">Rec Active</span>
+                <!-- Recording / Live Translation Master Toggle Button -->
+                <button id="rec-toggle-btn" class="flex items-center gap-space-xs px-3 sm:px-4 py-1.5 rounded-full bg-primary-container text-on-primary-container hover:bg-primary hover:text-on-primary transition-all font-bold text-xs sm:text-label-sm shadow-[0_0_16px_rgba(160,120,255,0.4)] cursor-pointer" type="button" title="Start or Stop Live Speech Translation">
+                    <span id="rec-dot" class="material-symbols-outlined text-[16px]">play_arrow</span>
+                    <span id="rec-label" class="uppercase tracking-wider">Start Live</span>
                 </button>
                 <!-- Engine Settings Tune Button -->
                 <button id="header-settings-btn" class="p-1.5 rounded-full bg-surface-container-low hover:bg-surface-container-high hover:text-on-surface text-on-surface-variant transition-colors border border-white/[0.05] cursor-pointer" type="button" title="Open Engine Settings Modal">
@@ -485,6 +485,30 @@
                     <!-- 3. CENTER COLUMN: MAIN LIVE FEED (6 Col on Desktop, Full on Mobile)   -->
                     <!-- ===================================================================== -->
                     <section class="lg:col-span-6 flex flex-col gap-space-md w-full">
+                        <!-- PROMINENT MASTER LIVE TRANSLATION ACTION BAR -->
+                        <div id="master-live-banner" class="rounded-2xl bg-gradient-to-r from-primary-container/30 via-surface-container-low to-surface-container-high/90 backdrop-blur-xl p-space-sm sm:p-space-md flex flex-col sm:flex-row items-center justify-between gap-space-sm shadow-xl border border-primary/25">
+                            <div class="flex items-center gap-space-sm w-full sm:w-auto">
+                                <div id="master-live-pulse-ring" class="w-12 h-12 rounded-2xl bg-surface-container-lowest border border-white/[0.08] flex items-center justify-center text-primary shrink-0 shadow-inner">
+                                    <span id="master-live-mic-icon" class="material-symbols-outlined text-[26px]">mic</span>
+                                </div>
+                                <div class="flex flex-col min-w-0">
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-headline-sm text-body-md sm:text-headline-sm font-bold text-on-surface">Gemini Live Translator</span>
+                                        <span id="master-live-status-pill" class="px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant font-label-sm text-[10px] font-bold uppercase tracking-wider">Standby</span>
+                                    </div>
+                                    <p class="font-label-sm text-label-sm text-on-surface-variant truncate">
+                                        Speak <span id="hero-src-name" class="text-primary font-bold">English (US)</span> ➔ Gemini synthesizes <span id="hero-tgt-name" class="text-secondary font-bold">Japanese (日本語)</span>
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+                                <button id="master-live-btn" class="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-primary to-primary-container hover:from-primary-container hover:to-primary text-on-primary font-bold text-body-sm shadow-[0_0_24px_rgba(160,120,255,0.6)] hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer" type="button" title="Click to Start or Stop Live Speech-to-Speech Translation">
+                                    <span class="material-symbols-outlined text-[20px]" id="master-btn-icon">play_arrow</span>
+                                    <span id="master-btn-label">START LIVE TRANSLATION</span>
+                                </button>
+                            </div>
+                        </div>
+
                         <!-- Feed Header Controls Bar -->
                         <div class="rounded-2xl bg-surface-container-low/90 backdrop-blur-md p-space-sm flex flex-col sm:flex-row items-center justify-between gap-space-sm shadow-xl border border-white/[0.04]">
                             <!-- View Toggle Tabs -->
@@ -573,8 +597,8 @@
                             </div>
                         </div>
 
-                        <!-- Realtime Ingestion Banner -->
-                        <div id="streaming-banner" class="rounded-2xl bg-surface-container-highest/90 p-space-sm shadow-xl flex flex-col gap-space-xs border border-secondary/20 cursor-pointer hover:border-secondary transition-all" title="Tap to test / simulate live turn ingestion">
+                        <!-- Realtime Ingestion Banner / Simulation Trigger -->
+                        <div id="streaming-banner" class="rounded-2xl bg-surface-container-highest/90 p-space-sm shadow-xl flex flex-col gap-space-xs border border-secondary/20 hover:border-secondary transition-all">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-space-xs">
                                     <span class="material-symbols-outlined text-[16px] text-secondary animate-spin">autorenew</span>
@@ -582,10 +606,13 @@
                                 </div>
                                 <span class="font-telemetry-data text-label-sm text-outline">CHUNK #1849</span>
                             </div>
-                            <div class="p-space-sm rounded-xl bg-surface-container-lowest/80 flex items-center justify-between gap-space-md">
+                            <button id="simulate-chunk-btn" class="p-space-sm rounded-xl bg-surface-container-lowest/80 hover:bg-surface-container-high flex items-center justify-between gap-space-md transition-colors cursor-pointer w-full text-left" type="button" title="Simulate an incoming speech turn">
                                 <span class="text-body-sm text-on-surface truncate">"...tap here to simulate an incoming bilingual speech turn..."</span>
-                                <span class="px-space-sm py-1 rounded-full bg-secondary/10 text-secondary font-bold text-xs shrink-0">TEST CHUNK</span>
-                            </div>
+                                <span class="px-space-sm py-1 rounded-full bg-secondary text-on-secondary font-bold text-xs shrink-0 flex items-center gap-1 shadow-sm">
+                                    <span class="material-symbols-outlined text-[14px]">play_circle</span>
+                                    <span>TEST CHUNK</span>
+                                </span>
+                            </button>
                         </div>
                     </section>
 
