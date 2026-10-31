@@ -64,7 +64,9 @@ export async function startMicCapture(onPcmChunkCallback, options = {}) {
     micProcessor = micContext.createScriptProcessor(4096, 1, 1);
 
     micProcessor.onaudioprocess = (e) => {
-        if (options.isMuted || options.isPaused) return;
+        const isMuted = typeof options.isMuted === 'function' ? options.isMuted() : !!options.isMuted;
+        const isPaused = typeof options.isPaused === 'function' ? options.isPaused() : !!options.isPaused;
+        if (isMuted || isPaused) return;
 
         const inputData = e.inputBuffer.getChannelData(0);
         const pcm16 = new Int16Array(inputData.length);

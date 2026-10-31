@@ -91,8 +91,8 @@ export async function connectGeminiLive({
                     }));
                 }
             }, {
-                isMuted: isMuted(),
-                isPaused: isPaused()
+                isMuted: isMuted,
+                isPaused: isPaused
             });
 
             if (showToast) {
