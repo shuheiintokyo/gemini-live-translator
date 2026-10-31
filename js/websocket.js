@@ -1,6 +1,6 @@
 // Gemini Live Multimodal WebSocket Client
 import { buildSystemInstruction, getLiveModel, getTranslationLanguageCode } from './config.js';
-import { flushPlayback, playPcmChunk, startMicCapture, stopMicCapture } from './audio.js';
+import { flushPlayback, getPlaybackState, playPcmChunk, startMicCapture, stopMicCapture } from './audio.js';
 
 const ENDPOINT = 'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent';
 
@@ -86,6 +86,7 @@ export function connectGeminiLive({
     }
     ws = socket;
     let isSetupComplete = false;
+    const stats = { audioChunks: 0, interrupted: 0, turnComplete: 0, messageFields: new Set() };
 
     // Every handler checks ws === socket, so a replaced socket's late events
     // can't tear down the session that took over from it
@@ -135,12 +136,17 @@ export function connectGeminiLive({
             return;
         }
 
+        Object.keys(data).forEach(key => stats.messageFields.add(key));
         const content = data.serverContent;
         if (!content) return;
+        Object.keys(content).forEach(key => stats.messageFields.add(`serverContent.${key}`));
+        if (content.interrupted) stats.interrupted++;
+        if (content.turnComplete) stats.turnComplete++;
 
         // 2. Play incoming audio chunks and display transcripts
         content.modelTurn?.parts?.forEach(part => {
             if (part.inlineData?.data) {
+                stats.audioChunks++;
                 playPcmChunk(part.inlineData.data);
             }
         });
@@ -158,6 +164,7 @@ export function connectGeminiLive({
 
     socket.onclose = (event) => {
         console.warn("Gemini WebSocket closed. Code:", event.code, "Reason:", event.reason);
+        console.info("Gemini session stats:", JSON.stringify({ ...stats, messageFields: [...stats.messageFields], playback: getPlaybackState() }));
         if (ws !== socket) return;
         ws = null;
         stopMicCapture();

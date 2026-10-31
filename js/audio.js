@@ -3,6 +3,7 @@ const PLAYBACK_SAMPLE_RATE = 24000;
 
 let playbackContext = null;
 let nextPlayTime = 0;
+let pendingByte = null;
 let activeSources = new Set();
 let micContext = null;
 let micMediaStream = null;
@@ -24,13 +25,19 @@ export function playPcmChunk(base64Data) {
     try {
         unlockPlayback();
 
+        // A chunk can end halfway through a 16-bit sample, so carry the spare byte over
         const binaryStr = atob(base64Data);
-        const bytes = new Uint8Array(binaryStr.length);
+        const carry = pendingByte === null ? 0 : 1;
+        const bytes = new Uint8Array(binaryStr.length + carry);
+        if (carry) bytes[0] = pendingByte;
         for (let i = 0; i < binaryStr.length; i++) {
-            bytes[i] = binaryStr.charCodeAt(i);
+            bytes[i + carry] = binaryStr.charCodeAt(i);
         }
+        const sampleCount = Math.floor(bytes.length / 2);
+        pendingByte = bytes.length % 2 ? bytes[bytes.length - 1] : null;
+        if (sampleCount === 0) return;
 
-        const int16Array = new Int16Array(bytes.buffer);
+        const int16Array = new Int16Array(bytes.buffer, 0, sampleCount);
         const float32Array = new Float32Array(int16Array.length);
         for (let i = 0; i < int16Array.length; i++) {
             float32Array[i] = int16Array[i] / 32768.0;
@@ -61,6 +68,11 @@ export function flushPlayback() {
     activeSources.forEach(sourceNode => sourceNode.stop());
     activeSources.clear();
     nextPlayTime = 0;
+    pendingByte = null;
+}
+
+export function getPlaybackState() {
+    return playbackContext?.state ?? 'none';
 }
 
 // Microphone Capture: 16kHz Mono PCM Audio Stream
