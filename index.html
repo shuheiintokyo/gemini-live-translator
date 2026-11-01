@@ -148,9 +148,9 @@
                     </div>
 
                     <div class="flex flex-col gap-space-xs relative">
-                        <button id="source-lang-btn" class="group p-space-sm rounded-xl bg-surface-container-high/90 hover:bg-surface-variant flex flex-col gap-1 border border-white/[0.04] hover:border-primary/50 transition-all cursor-pointer w-full text-left shadow-sm" type="button" title="Change the language you speak">
+                        <button id="source-lang-btn" class="group p-space-sm rounded-xl bg-surface-container-high/90 hover:bg-surface-variant flex flex-col gap-1 border border-white/[0.04] hover:border-primary/50 transition-all cursor-pointer w-full text-left shadow-sm" type="button" title="Change your language">
                             <span class="flex items-center gap-1 text-on-surface-variant font-label-sm text-label-sm group-hover:text-primary transition-colors">
-                                <span>YOU SPEAK</span>
+                                <span>YOUR LANGUAGE</span>
                                 <span class="material-symbols-outlined text-[14px]">arrow_drop_down</span>
                             </span>
                             <div class="flex items-center justify-between gap-space-xs">
@@ -168,9 +168,9 @@
                             </button>
                         </div>
 
-                        <button id="target-lang-btn" class="group p-space-sm rounded-xl bg-surface-container-high/90 hover:bg-surface-variant flex flex-col gap-1 border border-white/[0.04] hover:border-secondary/50 transition-all cursor-pointer w-full text-left shadow-sm" type="button" title="Change the translation language">
+                        <button id="target-lang-btn" class="group p-space-sm rounded-xl bg-surface-container-high/90 hover:bg-surface-variant flex flex-col gap-1 border border-white/[0.04] hover:border-secondary/50 transition-all cursor-pointer w-full text-left shadow-sm" type="button" title="Change the other person's language">
                             <span class="flex items-center gap-1 text-on-surface-variant font-label-sm text-label-sm group-hover:text-secondary transition-colors">
-                                <span>TRANSLATE INTO</span>
+                                <span>THEIR LANGUAGE</span>
                                 <span class="material-symbols-outlined text-[14px]">arrow_drop_down</span>
                             </span>
                             <div class="flex items-center justify-between gap-space-xs">
@@ -181,6 +181,16 @@
                                 <span id="target-lang-code" class="font-telemetry-data text-label-sm text-outline px-1.5 py-0.5 rounded-md bg-surface-container-lowest shrink-0"></span>
                             </div>
                         </button>
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Who is speaking</span>
+                        <div class="flex items-center gap-1">
+                            <button class="btn-direction-pill" type="button" data-direction="mine">Me</button>
+                            <button class="btn-direction-pill" type="button" data-direction="theirs">Them</button>
+                            <button class="btn-direction-pill" type="button" data-direction="both">Both</button>
+                        </div>
+                        <span id="both-ways-hint" class="hidden font-label-sm text-label-sm text-on-surface-variant pt-1">Gemini detects which language it hears and translates into the other, using Gemini 3.8 Live. It stops listening while the translation plays, so take turns.</span>
                     </div>
 
                     <div class="flex flex-col gap-1">
@@ -206,7 +216,7 @@
                         <div class="flex flex-col min-w-0">
                             <span id="master-live-status-pill" class="self-start"></span>
                             <p class="font-label-sm text-label-sm text-on-surface-variant pt-1">
-                                Speak <span id="hero-src-name" class="text-primary font-bold"></span> ➔ Gemini speaks <span id="hero-tgt-name" class="text-secondary font-bold"></span>
+                                <span id="hero-lead"></span> <span id="hero-src-name" class="text-primary font-bold"></span> <span id="hero-mid"></span> <span id="hero-tgt-name" class="text-secondary font-bold"></span>
                             </p>
                         </div>
                     </div>
@@ -241,7 +251,7 @@
                     </div>
 
                     <p id="transcript-empty" class="p-space-lg rounded-xl bg-surface-container-low/60 border border-white/[0.04] text-center font-body-sm text-body-sm text-on-surface-variant">
-                        Press Start Live and speak. Your words and the translation will appear here.
+                        Press Start Live and start talking. What's said and its translation will appear here.
                     </p>
                     <div id="transcript-rows" class="flex flex-col gap-space-sm"></div>
                 </div>

@@ -1,6 +1,6 @@
 // Gemini Live Multimodal WebSocket Client
-import { buildSystemInstruction, getLiveModel, getTranslationLanguageCode } from './config.js';
-import { flushPlayback, getPlaybackState, playPcmChunk, startMicCapture, stopMicCapture } from './audio.js';
+import { buildBothWaysInstruction, buildSystemInstruction, getLiveModel, getTranslationLanguageCode } from './config.js';
+import { flushPlayback, getPlaybackState, isPlaybackBusy, playPcmChunk, startMicCapture, stopMicCapture } from './audio.js';
 
 const ENDPOINT = 'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent';
 
@@ -10,7 +10,7 @@ export function isSessionActive() {
     return ws !== null;
 }
 
-function buildSetupMessage(model, sourceLang, targetLang, targetTone) {
+function buildSetupMessage(model, sourceLang, targetLang, targetTone, bothWays) {
     // The Live Translate model takes no system instruction or voice
     if (getLiveModel(model).isTranslateModel) {
         return {
@@ -43,7 +43,9 @@ function buildSetupMessage(model, sourceLang, targetLang, targetTone) {
             },
             systemInstruction: {
                 parts: [{
-                    text: buildSystemInstruction(sourceLang, targetLang, targetTone)
+                    text: bothWays
+                        ? buildBothWaysInstruction(sourceLang, targetLang, targetTone)
+                        : buildSystemInstruction(sourceLang, targetLang, targetTone)
                 }]
             },
             inputAudioTranscription: {},
@@ -65,6 +67,7 @@ export function connectGeminiLive({
     sourceLang,
     targetLang,
     targetTone,
+    bothWays,
     isMuted,
     onStatusChange,
     onInputText,
@@ -93,7 +96,7 @@ export function connectGeminiLive({
     socket.onopen = () => {
         if (ws !== socket) return;
         console.log("WebSocket opened. Sending setup for model:", model);
-        socket.send(JSON.stringify(buildSetupMessage(model, sourceLang, targetLang, targetTone)));
+        socket.send(JSON.stringify(buildSetupMessage(model, sourceLang, targetLang, targetTone, bothWays)));
     };
 
     socket.onmessage = async (event) => {
@@ -121,7 +124,8 @@ export function connectGeminiLive({
                             }
                         }));
                     }
-                }, { isMuted });
+                // Both ways, the mic would hear the translation and translate it straight back
+                }, { isMuted, isSilenced: bothWays ? isPlaybackBusy : undefined });
             } catch (micErr) {
                 console.error("Microphone capture error:", micErr);
                 if (ws !== socket) return;
@@ -132,7 +136,9 @@ export function connectGeminiLive({
             }
             if (ws !== socket) return;
             onStatusChange('connected');
-            showToast(`Listening. Speak in ${sourceLang.name} to translate into ${targetLang.name}.`, "success", "mic");
+            showToast(bothWays
+                ? `Listening for ${sourceLang.name} and ${targetLang.name}.`
+                : `Listening for ${sourceLang.name} to translate into ${targetLang.name}.`, "success", "mic");
             return;
         }
 
@@ -164,12 +170,7 @@ export function connectGeminiLive({
 
     socket.onclose = (event) => {
         console.warn("Gemini WebSocket closed. Code:", event.code, "Reason:", event.reason);
-        const playback = getPlaybackState();
-        console.info("Gemini session stats:", JSON.stringify({ ...stats, messageFields: [...stats.messageFields], playback }));
-        // Phones have no console, so the same numbers go on screen
-        if (isSetupComplete) {
-            showToast(`Audio check: ${stats.audioChunks} chunks, ${stats.interrupted} interrupted, player ${playback.state}, clock ${playback.clockSeconds}s`, "diagnostic", "graphic_eq");
-        }
+        console.info("Gemini session stats:", JSON.stringify({ ...stats, messageFields: [...stats.messageFields], playback: getPlaybackState() }));
         if (ws !== socket) return;
         ws = null;
         stopMicCapture();

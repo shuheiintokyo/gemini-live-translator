@@ -1,5 +1,6 @@
 // Audio Processing: Gapless PCM Player and Microphone Capture
 const PLAYBACK_SAMPLE_RATE = 24000;
+const ECHO_TAIL_SECONDS = 0.3;
 
 let playbackContext = null;
 let nextPlayTime = 0;
@@ -88,6 +89,11 @@ export function getPlaybackState() {
     };
 }
 
+// True while translated speech is playing, plus a moment for the room to go quiet
+export function isPlaybackBusy() {
+    return nextPlayTime > 0 && nextPlayTime + ECHO_TAIL_SECONDS > playbackContext.currentTime;
+}
+
 // Microphone Capture: 16kHz Mono PCM Audio Stream
 export async function startMicCapture(onPcmChunkCallback, options = {}) {
     stopMicCapture();
@@ -123,8 +129,11 @@ export async function startMicCapture(onPcmChunkCallback, options = {}) {
 
         const inputData = e.inputBuffer.getChannelData(0);
         const pcm16 = new Int16Array(inputData.length);
-        for (let i = 0; i < inputData.length; i++) {
-            pcm16[i] = Math.max(-1, Math.min(1, inputData[i])) * 0x7FFF;
+        // Silenced audio still goes out as zeros, so Gemini keeps hearing a live stream
+        if (!options.isSilenced?.()) {
+            for (let i = 0; i < inputData.length; i++) {
+                pcm16[i] = Math.max(-1, Math.min(1, inputData[i])) * 0x7FFF;
+            }
         }
 
         let binary = '';

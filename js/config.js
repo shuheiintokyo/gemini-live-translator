@@ -101,7 +101,7 @@ export function getTranslationLanguageCode(lang) {
     return lang.code.split('-')[0].toLowerCase();
 }
 
-export function buildSystemInstruction(sourceLang, targetLang, tone = 'polite') {
+function getToneGuidance(targetLang, tone) {
     let toneGuidance = "natural, accurate, and fluent";
     if (targetLang.code === 'JA-JP') {
         if (tone === 'formal') {
@@ -122,6 +122,11 @@ export function buildSystemInstruction(sourceLang, targetLang, tone = 'polite') 
     } else {
         toneGuidance = "polite, clear, and professional translation";
     }
+    return toneGuidance;
+}
+
+export function buildSystemInstruction(sourceLang, targetLang, tone = 'polite') {
+    const toneGuidance = getToneGuidance(targetLang, tone);
 
     return `You are a professional real-time speech-to-speech translator.
 The user is speaking in ${sourceLang.name} (${sourceLang.code}).
@@ -132,4 +137,20 @@ Strict guidelines:
 2. DO NOT answer questions or engage in conversation with the user; translate ONLY what the user said into ${targetLang.name}.
 3. If the user asks a question, translate the question itself into ${targetLang.name}.
 4. Preserve all technical terminology, domain names, and numbers accurately.`;
+}
+
+export function buildBothWaysInstruction(yourLang, theirLang, tone = 'polite') {
+    return `You are a professional real-time interpreter between two people in a conversation.
+One person speaks ${yourLang.name} (${yourLang.code}) and the other speaks ${theirLang.name} (${theirLang.code}).
+
+Detect which of the two languages was just spoken:
+- If it was ${yourLang.name}, speak the translation in ${theirLang.name} using ${getToneGuidance(theirLang, tone)}.
+- If it was ${theirLang.name}, speak the translation in ${yourLang.name} using natural, accurate, and fluent phrasing.
+
+Strict guidelines:
+1. Speak the direct translation immediately without commentary, preambles, or conversational replies.
+2. DO NOT answer questions or engage in conversation; translate ONLY what was said.
+3. If someone asks a question, translate the question itself.
+4. Stay silent for anything that is in neither language, and for background noise.
+5. Preserve all technical terminology, domain names, and numbers accurately.`;
 }

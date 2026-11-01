@@ -8,6 +8,7 @@ const state = {
     sourceLang: getLanguageByCode(localStorage.getItem('gemini_source_lang') || 'EN-US'),
     targetLang: getLanguageByCode(localStorage.getItem('gemini_target_lang') || 'JA-JP'),
     targetTone: localStorage.getItem('gemini_target_tone') || 'polite',
+    direction: localStorage.getItem('gemini_direction') || 'mine',
     // getLiveModel falls back to the default when a retired model is still saved
     selectedModel: getLiveModel(localStorage.getItem('gemini_model')).id,
     apiKey: localStorage.getItem('gemini_api_key') || '',
@@ -18,6 +19,19 @@ const state = {
 };
 
 const TONE_LABELS = { polite: 'Polite', formal: 'Formal', casual: 'Casual', technical: 'Technical' };
+
+// Live Translate has one fixed target language, so both ways needs the other model
+function getSessionModel() {
+    const model = getLiveModel(state.selectedModel);
+    return state.direction === 'both' && model.isTranslateModel ? LIVE_MODELS.find(m => !m.isTranslateModel) : model;
+}
+
+// sourceLang is yours and targetLang is theirs, so "they speak" runs them in reverse
+function getSessionLanguages() {
+    return state.direction === 'theirs'
+        ? { from: state.targetLang, to: state.sourceLang }
+        : { from: state.sourceLang, to: state.targetLang };
+}
 
 // -----------------------------------------------------------------------------
 // Toast HUD Notification
@@ -47,12 +61,12 @@ function showToast(message, type = 'info', icon = 'info') {
         toast.classList.add('translate-y-0', 'opacity-100');
     });
 
-    // Errors and diagnostics stay up long enough to read
+    // Errors explain why a session failed, so they stay up long enough to read
     setTimeout(() => {
         toast.classList.remove('translate-y-0', 'opacity-100');
         toast.classList.add('translate-y-2', 'opacity-0');
         setTimeout(() => toast.remove(), 300);
-    }, type === 'error' || type === 'diagnostic' ? 9000 : 3200);
+    }, type === 'error' ? 9000 : 3200);
 }
 
 // -----------------------------------------------------------------------------
@@ -66,6 +80,7 @@ function updateLanguageUI() {
     localStorage.setItem('gemini_source_lang', src.code);
     localStorage.setItem('gemini_target_lang', tgt.code);
     localStorage.setItem('gemini_target_tone', tone);
+    localStorage.setItem('gemini_direction', state.direction);
 
     document.getElementById('source-lang-flag').textContent = src.flag;
     document.getElementById('source-lang-name').textContent = src.name;
@@ -73,14 +88,27 @@ function updateLanguageUI() {
     document.getElementById('target-lang-flag').textContent = tgt.flag;
     document.getElementById('target-lang-name').textContent = tgt.name;
     document.getElementById('target-lang-code').textContent = tgt.code;
-    document.getElementById('hero-src-name').textContent = src.name;
-    document.getElementById('hero-tgt-name').textContent = tgt.name;
-    document.getElementById('source-feed-title').textContent = `Original · ${src.name}`;
-    document.getElementById('target-feed-title').textContent = `Translation · ${tgt.name}`;
 
-    const model = getLiveModel(state.selectedModel);
+    const bothWays = state.direction === 'both';
+    const { from, to } = getSessionLanguages();
+    document.getElementById('hero-lead').textContent = { mine: 'You speak', theirs: 'They speak', both: 'Either person speaks' }[state.direction];
+    document.getElementById('hero-mid').textContent = bothWays ? '⇄' : '➔ Gemini speaks';
+    document.getElementById('hero-src-name').textContent = from.name;
+    document.getElementById('hero-tgt-name').textContent = to.name;
+    document.getElementById('source-feed-title').textContent = bothWays ? 'Heard' : `Original · ${from.name}`;
+    document.getElementById('target-feed-title').textContent = bothWays ? 'Translation' : `Translation · ${to.name}`;
+
+    document.querySelectorAll('.btn-direction-pill').forEach(btn => {
+        const base = 'btn-direction-pill flex-1 py-1 px-1 rounded-lg font-label-sm text-[10px] text-center transition-all cursor-pointer';
+        btn.className = `${base} ${btn.getAttribute('data-direction') === state.direction
+            ? 'bg-primary-container text-on-primary-container font-bold'
+            : 'bg-surface-container-highest text-on-surface-variant hover:text-on-surface'}`;
+    });
+
+    const model = getSessionModel();
     document.getElementById('active-model-name').textContent = model.label;
     document.getElementById('translate-model-hint').classList.toggle('hidden', !model.isTranslateModel);
+    document.getElementById('both-ways-hint').classList.toggle('hidden', !bothWays);
 
     document.querySelectorAll('.btn-tone-pill').forEach(btn => {
         btn.disabled = model.isTranslateModel;
@@ -146,7 +174,7 @@ function selectLanguage(lang, type) {
 
 function openLanguagePicker(type) {
     currentLangTargetType = type;
-    document.getElementById('language-dialog-title').textContent = type === 'source' ? 'Language you speak' : 'Translate into';
+    document.getElementById('language-dialog-title').textContent = type === 'source' ? 'Your language' : 'Their language';
     langSearchInput.value = '';
     renderLanguageOptions();
     langDialog.showModal();
@@ -157,12 +185,14 @@ function openLanguagePicker(type) {
 // -----------------------------------------------------------------------------
 function startSession() {
     state.currentTurn = null;
+    const { from, to } = getSessionLanguages();
     connectGeminiLive({
         apiKey: state.apiKey,
-        model: state.selectedModel,
-        sourceLang: state.sourceLang,
-        targetLang: state.targetLang,
+        model: getSessionModel().id,
+        sourceLang: from,
+        targetLang: to,
         targetTone: state.targetTone,
+        bothWays: state.direction === 'both',
         isMuted: () => state.isMuted,
         onStatusChange: updateLiveStatusUI,
         onInputText: (text) => appendToTurn('source', text),
@@ -238,10 +268,13 @@ function createTranscriptCell(borderClass, label) {
 // Transcripts arrive as fragments, so each turn is one row that keeps growing
 function appendToTurn(field, text) {
     if (!state.currentTurn) {
+        // Both ways, each turn can go either way, so the rows can't name a language
+        const bothWays = state.direction === 'both';
+        const { from, to } = getSessionLanguages();
         const turn = {
             time: new Date().toLocaleTimeString(),
-            sourceName: state.sourceLang.name,
-            targetName: state.targetLang.name,
+            sourceName: bothWays ? 'Heard' : from.name,
+            targetName: bothWays ? 'Translation' : to.name,
             source: '',
             translation: ''
         };
@@ -361,6 +394,14 @@ document.addEventListener('DOMContentLoaded', () => {
         [state.sourceLang, state.targetLang] = [state.targetLang, state.sourceLang];
         updateLanguageUI();
         restartIfLive();
+    });
+
+    document.querySelectorAll('.btn-direction-pill').forEach(btn => {
+        btn.addEventListener('click', () => {
+            state.direction = btn.getAttribute('data-direction');
+            updateLanguageUI();
+            restartIfLive();
+        });
     });
 
     document.querySelectorAll('.btn-tone-pill').forEach(btn => {
