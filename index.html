@@ -282,10 +282,14 @@
             <div class="flex flex-col gap-1">
                 <div class="flex items-center justify-between">
                     <label for="setting-api-key" class="font-label-sm text-label-sm text-on-surface-variant uppercase">Google AI Studio API Key</label>
-                    <span class="text-secondary text-[11px]">Saved in this browser</span>
+                    <span class="text-secondary text-[11px] text-right">Stored on this device only</span>
                 </div>
+                <p id="settings-key-prompt" class="hidden p-space-sm rounded-xl bg-error-container text-on-error-container text-body-sm leading-snug">
+                    This browser has no API key yet. Paste your key below, then tap Save. Each phone or computer needs its own copy.
+                    <a class="underline font-bold" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Get a key</a>
+                </p>
                 <div class="relative flex items-center">
-                    <input id="setting-api-key" type="password" placeholder="AIzaSy..." class="w-full bg-surface-container-high text-on-surface p-space-sm rounded-xl border border-white/[0.08] outline-none pr-10 font-mono text-xs" />
+                    <input id="setting-api-key" type="password" placeholder="Paste your API key here" class="w-full bg-surface-container-high text-on-surface p-space-sm rounded-xl border border-white/[0.08] outline-none pr-10 font-mono text-xs" />
                     <button id="toggle-key-visibility" class="absolute right-2 text-outline hover:text-on-surface cursor-pointer p-1" type="button">
                         <span class="material-symbols-outlined text-[18px]">visibility</span>
                     </button>

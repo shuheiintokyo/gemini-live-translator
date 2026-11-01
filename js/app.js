@@ -181,9 +181,9 @@ function toggleLiveSession() {
 
     unlockPlayback();
     if (!state.apiKey) {
-        showToast("Add your Gemini API key to start.", "error", "key");
         state.startAfterSettings = true;
         openSettings();
+        promptForApiKey();
         return;
     }
     startSession();
@@ -314,10 +314,22 @@ const modelSelect = document.getElementById('setting-model-select');
 function openSettings() {
     settingApiKey.value = state.apiKey;
     modelSelect.value = state.selectedModel;
+    document.getElementById('settings-key-prompt').classList.add('hidden');
     settingsDialog.showModal();
 }
 
+// Lives inside the dialog because toasts can't show above an open modal
+function promptForApiKey() {
+    document.getElementById('settings-key-prompt').classList.remove('hidden');
+    settingApiKey.focus();
+}
+
 function saveSettings() {
+    if (state.startAfterSettings && !settingApiKey.value.trim()) {
+        promptForApiKey();
+        return;
+    }
+
     state.apiKey = settingApiKey.value.trim();
     localStorage.setItem('gemini_api_key', state.apiKey);
     state.selectedModel = modelSelect.value;
