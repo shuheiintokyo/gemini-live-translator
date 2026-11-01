@@ -47,12 +47,12 @@ function showToast(message, type = 'info', icon = 'info') {
         toast.classList.add('translate-y-0', 'opacity-100');
     });
 
-    // Errors explain why a session failed, so they stay up long enough to read
+    // Errors and diagnostics stay up long enough to read
     setTimeout(() => {
         toast.classList.remove('translate-y-0', 'opacity-100');
         toast.classList.add('translate-y-2', 'opacity-0');
         setTimeout(() => toast.remove(), 300);
-    }, type === 'error' ? 9000 : 3200);
+    }, type === 'error' || type === 'diagnostic' ? 9000 : 3200);
 }
 
 // -----------------------------------------------------------------------------
@@ -329,6 +329,7 @@ function saveSettings() {
         promptForApiKey();
         return;
     }
+    unlockPlayback();
 
     state.apiKey = settingApiKey.value.trim();
     localStorage.setItem('gemini_api_key', state.apiKey);

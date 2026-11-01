@@ -164,7 +164,12 @@ export function connectGeminiLive({
 
     socket.onclose = (event) => {
         console.warn("Gemini WebSocket closed. Code:", event.code, "Reason:", event.reason);
-        console.info("Gemini session stats:", JSON.stringify({ ...stats, messageFields: [...stats.messageFields], playback: getPlaybackState() }));
+        const playback = getPlaybackState();
+        console.info("Gemini session stats:", JSON.stringify({ ...stats, messageFields: [...stats.messageFields], playback }));
+        // Phones have no console, so the same numbers go on screen
+        if (isSetupComplete) {
+            showToast(`Audio check: ${stats.audioChunks} chunks, ${stats.interrupted} interrupted, player ${playback.state}, clock ${playback.clockSeconds}s`, "diagnostic", "graphic_eq");
+        }
         if (ws !== socket) return;
         ws = null;
         stopMicCapture();

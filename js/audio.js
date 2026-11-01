@@ -13,10 +13,20 @@ let micGeneration = 0;
 // Must run inside a click handler: browsers keep audio suspended until a user gesture
 export function unlockPlayback() {
     if (!playbackContext) {
-        playbackContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: PLAYBACK_SAMPLE_RATE });
+        // Default rate: opening the mic can change the iPhone's hardware rate, and
+        // buffers keep their own 24kHz rate and get resampled either way
+        playbackContext = new (window.AudioContext || window.webkitAudioContext)();
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) resumePlayback();
+        });
     }
-    if (playbackContext.state === 'suspended') {
-        playbackContext.resume();
+    resumePlayback();
+}
+
+// Besides 'suspended', iOS Safari can report a non-standard 'interrupted' state
+function resumePlayback() {
+    if (playbackContext.state !== 'running') {
+        playbackContext.resume().catch(err => console.warn("Could not resume audio playback:", err));
     }
 }
 
@@ -72,7 +82,10 @@ export function flushPlayback() {
 }
 
 export function getPlaybackState() {
-    return playbackContext?.state ?? 'none';
+    return {
+        state: playbackContext?.state ?? 'none',
+        clockSeconds: Math.round(playbackContext?.currentTime ?? 0)
+    };
 }
 
 // Microphone Capture: 16kHz Mono PCM Audio Stream
