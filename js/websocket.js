@@ -46,6 +46,15 @@ function buildSetupMessage(model, sourceLang, targetLang, voiceName) {
                     text: buildSystemInstruction(sourceLang, targetLang)
                 }]
             },
+            // By default any new speech cancels the translation in progress ("barge-in"),
+            // and short pauses end a turn mid-sentence
+            realtimeInputConfig: {
+                activityHandling: "NO_INTERRUPTION",
+                automaticActivityDetection: {
+                    endOfSpeechSensitivity: "END_SENSITIVITY_LOW",
+                    silenceDurationMs: 1000
+                }
+            },
             inputAudioTranscription: {},
             outputAudioTranscription: {}
         }

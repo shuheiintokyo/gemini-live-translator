@@ -329,11 +329,15 @@ function selectMode(mode) {
 // -----------------------------------------------------------------------------
 // Live Transcript
 // -----------------------------------------------------------------------------
-// Gemini 3.8 Live sometimes leaks working notes like "🧠[ja]<not fr>…✨" around the translation
+// Gemini 3.8 Live sometimes leaks working notes around the translation, such as
+// "🧠[ja]<not fr>source✨translation<partial>" or "{pause}💃[en]<not ja>"
 function cleanTranscript(text) {
     return text
-        .replace(/🧠[\s\S]*?(✨|$)/g, '')
-        .replace(/<partial>|\{cont\}|✨/g, '')
+        .replace(/🧠[\s\S]*?(✨|$)/gu, '')
+        .replace(/\p{Extended_Pictographic}️?\s*\[[^\]]*\]\s*<not [^>]*>[^✨]*✨/gu, '')
+        .replace(/\[[a-z]{2,3}(?:-[A-Za-z]+)?\]\s*<not [^>]*>/g, '')
+        .replace(/\{[a-z]+\}|<[a-z]+>/g, '')
+        .replace(/[\p{Extended_Pictographic}‍️]/gu, '')
         .replace(/\s+/g, ' ')
         .trim();
 }
