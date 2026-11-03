@@ -4,10 +4,21 @@ import { flushPlayback, getPlaybackState, isPlaybackBusy, playPcmChunk, startMic
 
 const ENDPOINT = 'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent';
 
-let ws = null;
+const MAX_RECONNECT_ATTEMPTS = 3;
+const DEFAULT_GO_AWAY_MS = 5000;
 
+let ws = null;
+let reconnectTimer = null;
+
+// A session waiting to reconnect still counts as active, so Stop can cancel it
 export function isSessionActive() {
-    return ws !== null;
+    return ws !== null || reconnectTimer !== null;
+}
+
+// goAway.timeLeft is a protobuf Duration, which arrives in JSON as e.g. "4.5s"
+function parseDurationMs(duration) {
+    const seconds = parseFloat(duration);
+    return Number.isFinite(seconds) ? seconds * 1000 : DEFAULT_GO_AWAY_MS;
 }
 
 function buildSetupMessage(model, sourceLang, targetLang, voiceName) {
@@ -68,21 +79,24 @@ function describeMicError(err) {
     return `Could not start the microphone: ${err.message}`;
 }
 
-export function connectGeminiLive({
-    apiKey,
-    model,
-    sourceLang,
-    targetLang,
-    voiceName,
-    playAudio,
-    silenceWhilePlaying,
-    listeningMessage,
-    onStatusChange,
-    onInputText,
-    onOutputText,
-    onTurnEnd,
-    showToast
-}) {
+export function connectGeminiLive(options) {
+    const {
+        apiKey,
+        model,
+        sourceLang,
+        targetLang,
+        voiceName,
+        playAudio,
+        silenceWhilePlaying,
+        listeningMessage,
+        onStatusChange,
+        onInputText,
+        onOutputText,
+        onTurnEnd,
+        showToast,
+        reconnectAttempt = 0,
+        isReconnect = false
+    } = options;
     disconnectGeminiLive();
     onStatusChange('connecting');
 
@@ -144,7 +158,25 @@ export function connectGeminiLive({
             }
             if (ws !== socket) return;
             onStatusChange('connected');
-            showToast(listeningMessage, "success", "mic");
+            showToast(isReconnect ? "Reconnected." : listeningMessage, "success", isReconnect ? "sync" : "mic");
+            return;
+        }
+
+        // Google ends each connection after about 10 minutes and warns first. Translation
+        // needs no memory of earlier sentences, so move to a fresh session once playback ends
+        if (data.goAway) {
+            const deadline = Date.now() + Math.max(parseDurationMs(data.goAway.timeLeft) - 1000, 0);
+            const handOver = () => {
+                if (ws !== socket) return;
+                if (isPlaybackBusy() && Date.now() < deadline) {
+                    setTimeout(handOver, 250);
+                    return;
+                }
+                console.info("Gemini asked to reconnect. Starting a fresh session.");
+                onTurnEnd();
+                connectGeminiLive({ ...options, reconnectAttempt: 0, isReconnect: true });
+            };
+            handOver();
             return;
         }
 
@@ -181,6 +213,22 @@ export function connectGeminiLive({
         ws = null;
         stopMicCapture();
         flushPlayback();
+
+        // A working session that drops without an error reason (weak signal, the server's
+        // time limit) reconnects by itself a few times before giving up
+        const wasWorking = isSetupComplete || reconnectAttempt > 0;
+        const nextAttempt = isSetupComplete ? 1 : reconnectAttempt + 1;
+        if (wasWorking && !event.reason && nextAttempt <= MAX_RECONNECT_ATTEMPTS) {
+            onTurnEnd();
+            onStatusChange('connecting');
+            showToast("Connection dropped. Reconnecting…", "info", "sync");
+            reconnectTimer = setTimeout(() => {
+                reconnectTimer = null;
+                connectGeminiLive({ ...options, reconnectAttempt: nextAttempt, isReconnect: true });
+            }, 1000 * nextAttempt);
+            return;
+        }
+
         onStatusChange('disconnected');
         if (event.reason) {
             showToast(`Session ended: ${event.reason}`, "error", "warning");
@@ -191,6 +239,8 @@ export function connectGeminiLive({
 }
 
 export function disconnectGeminiLive() {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
     stopMicCapture();
     flushPlayback();
     if (ws) {

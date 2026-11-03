@@ -198,9 +198,29 @@ function renderMic() {
     document.getElementById('stop-btn').classList.toggle('hidden', isIdle || mode !== 'talk');
 }
 
+// Keeps the screen on during a session, because a locked iPhone stops the mic.
+// Older browsers have no Wake Lock, so this is best effort
+let wakeLock = null;
+
+async function updateWakeLock() {
+    const wanted = state.status !== 'disconnected' && document.visibilityState === 'visible';
+    if (wanted && !wakeLock && 'wakeLock' in navigator) {
+        try {
+            wakeLock = await navigator.wakeLock.request('screen');
+            wakeLock.addEventListener('release', () => { wakeLock = null; });
+        } catch (err) {
+            console.warn("Could not keep the screen on:", err.name);
+        }
+    } else if (!wanted && wakeLock) {
+        wakeLock.release();
+        wakeLock = null;
+    }
+}
+
 function updateLiveStatusUI(status) {
     state.status = status;
     renderMic();
+    updateWakeLock();
 }
 
 function restartIfLive() {
@@ -559,6 +579,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!settingsDialog.open) settingsDialog.showModal();
         settingApiKey.focus();
     });
+
+    // The screen lock is dropped whenever the page is hidden, so take it back on return
+    document.addEventListener('visibilitychange', updateWakeLock);
 
     updateLanguageUI();
     updateLiveStatusUI('disconnected');
