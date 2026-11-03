@@ -1,37 +1,42 @@
 // Main Application Controller & UI Logic
-import { SUPPORTED_LANGUAGES, LIVE_MODELS, getLanguageByCode, getLiveModel } from './config.js';
+import { SUPPORTED_LANGUAGES, LIVE_MODELS, VOICES, getLanguageByCode, getTranslationLanguageCode } from './config.js';
 import { unlockPlayback } from './audio.js';
 import { connectGeminiLive, disconnectGeminiLive, isSessionActive } from './websocket.js';
+
+const MODES = {
+    speak: {
+        sourceLabel: 'You speak',
+        targetLabel: 'Translate into',
+        hint: 'Speak in your language. Gemini says it in the other language and shows the text.'
+    },
+    listen: {
+        sourceLabel: 'Translate into',
+        targetLabel: 'They speak · detected automatically',
+        hint: 'Let the mic hear someone. Their words and the translation appear as text, with no audio.'
+    },
+    talk: {
+        sourceLabel: 'Your language',
+        targetLabel: 'Their language',
+        hint: 'A conversation. Tap the mic to switch who is speaking: blue is you, purple is them.'
+    }
+};
+
+const savedMode = localStorage.getItem('gemini_mode');
+const savedVoice = localStorage.getItem('gemini_voice');
 
 // Application State
 const state = {
     sourceLang: getLanguageByCode(localStorage.getItem('gemini_source_lang') || 'EN-US'),
     targetLang: getLanguageByCode(localStorage.getItem('gemini_target_lang') || 'JA-JP'),
-    targetTone: localStorage.getItem('gemini_target_tone') || 'polite',
-    direction: localStorage.getItem('gemini_direction') || 'mine',
-    // getLiveModel falls back to the default when a retired model is still saved
-    selectedModel: getLiveModel(localStorage.getItem('gemini_model')).id,
+    mode: MODES[savedMode] ? savedMode : 'speak',
+    voice: VOICES.some(v => v.name === savedVoice) ? savedVoice : VOICES[0].name,
+    talkSpeaker: 'me',
+    status: 'disconnected',
     apiKey: localStorage.getItem('gemini_api_key') || '',
-    isMuted: false,
     startAfterSettings: false,
     turns: [],
     currentTurn: null
 };
-
-const TONE_LABELS = { polite: 'Polite', formal: 'Formal', casual: 'Casual', technical: 'Technical' };
-
-// Live Translate has one fixed target language, so both ways needs the other model
-function getSessionModel() {
-    const model = getLiveModel(state.selectedModel);
-    return state.direction === 'both' && model.isTranslateModel ? LIVE_MODELS.find(m => !m.isTranslateModel) : model;
-}
-
-// sourceLang is yours and targetLang is theirs, so "they speak" runs them in reverse
-function getSessionLanguages() {
-    return state.direction === 'theirs'
-        ? { from: state.targetLang, to: state.sourceLang }
-        : { from: state.sourceLang, to: state.targetLang };
-}
 
 // -----------------------------------------------------------------------------
 // Toast HUD Notification
@@ -70,54 +75,121 @@ function showToast(message, type = 'info', icon = 'info') {
 }
 
 // -----------------------------------------------------------------------------
-// UI Updates for Active Languages & Model
+// Session Plan: which model, direction and audio each mode uses
 // -----------------------------------------------------------------------------
+// Voices can only be set on Gemini 3.8 Live; Live Translate picks its own and changes it
+const VOICE_MODEL = LIVE_MODELS.find(m => !m.isTranslateModel);
+// Live Translate detects the spoken language itself and keeps translating without pauses
+const LISTEN_MODEL = LIVE_MODELS.find(m => m.isTranslateModel);
+
+// sourceLang is the user's language and targetLang the other person's
+function getSessionPlan() {
+    const mine = state.sourceLang;
+    const theirs = state.targetLang;
+    if (state.mode === 'listen') return { model: LISTEN_MODEL, from: theirs, to: mine, playAudio: false };
+    const reverse = state.mode === 'talk' && state.talkSpeaker === 'them';
+    return { model: VOICE_MODEL, from: reverse ? theirs : mine, to: reverse ? mine : theirs, playAudio: true };
+}
+
+function getListeningMessage(plan) {
+    if (state.mode === 'listen') return `Listening. Translating into ${plan.to.name}.`;
+    if (state.mode === 'talk') {
+        return state.talkSpeaker === 'me' ? `Your turn. Speak in ${plan.from.name}.` : `Their turn. Listening for ${plan.from.name}.`;
+    }
+    return `Listening. Speak in ${plan.from.name}.`;
+}
+
+// -----------------------------------------------------------------------------
+// UI Updates for Mode, Languages & Voice
+// -----------------------------------------------------------------------------
+function pillClass(base, isSelected) {
+    return `${base} ${isSelected
+        ? 'bg-primary-container text-on-primary-container font-bold'
+        : 'bg-surface-container-highest text-on-surface-variant hover:text-on-surface'}`;
+}
+
 function updateLanguageUI() {
     const src = state.sourceLang;
     const tgt = state.targetLang;
-    const tone = state.targetTone;
+    const mode = MODES[state.mode];
+    const plan = getSessionPlan();
 
     localStorage.setItem('gemini_source_lang', src.code);
     localStorage.setItem('gemini_target_lang', tgt.code);
-    localStorage.setItem('gemini_target_tone', tone);
-    localStorage.setItem('gemini_direction', state.direction);
+    localStorage.setItem('gemini_mode', state.mode);
+    localStorage.setItem('gemini_voice', state.voice);
 
+    document.getElementById('source-lang-label').textContent = mode.sourceLabel;
     document.getElementById('source-lang-flag').textContent = src.flag;
     document.getElementById('source-lang-name').textContent = src.name;
     document.getElementById('source-lang-code').textContent = src.code;
+    document.getElementById('target-lang-label').textContent = mode.targetLabel;
     document.getElementById('target-lang-flag').textContent = tgt.flag;
     document.getElementById('target-lang-name').textContent = tgt.name;
     document.getElementById('target-lang-code').textContent = tgt.code;
+    document.getElementById('mode-hint').textContent = mode.hint;
+    document.getElementById('active-model-name').textContent = plan.model.label;
+    document.getElementById('source-feed-title').textContent = `Original · ${plan.from.name}`;
+    document.getElementById('target-feed-title').textContent = `Translation · ${plan.to.name}`;
 
-    const bothWays = state.direction === 'both';
-    const { from, to } = getSessionLanguages();
-    document.getElementById('hero-lead').textContent = { mine: 'You speak', theirs: 'They speak', both: 'Either person speaks' }[state.direction];
-    document.getElementById('hero-mid').textContent = bothWays ? '⇄' : '➔ Gemini speaks';
-    document.getElementById('hero-src-name').textContent = from.name;
-    document.getElementById('hero-tgt-name').textContent = to.name;
-    document.getElementById('source-feed-title').textContent = bothWays ? 'Heard' : `Original · ${from.name}`;
-    document.getElementById('target-feed-title').textContent = bothWays ? 'Translation' : `Translation · ${to.name}`;
-
-    document.querySelectorAll('.btn-direction-pill').forEach(btn => {
-        const base = 'btn-direction-pill flex-1 py-1 px-1 rounded-lg font-label-sm text-[10px] text-center transition-all cursor-pointer';
-        btn.className = `${base} ${btn.getAttribute('data-direction') === state.direction
-            ? 'bg-primary-container text-on-primary-container font-bold'
-            : 'bg-surface-container-highest text-on-surface-variant hover:text-on-surface'}`;
+    document.querySelectorAll('.btn-mode-tab').forEach(btn => {
+        const isSelected = btn.getAttribute('data-mode') === state.mode;
+        btn.setAttribute('aria-selected', String(isSelected));
+        btn.className = pillClass('btn-mode-tab flex flex-col items-center gap-0.5 py-2 rounded-xl font-label-sm text-label-sm transition-all cursor-pointer', isSelected);
     });
 
-    const model = getSessionModel();
-    document.getElementById('active-model-name').textContent = model.label;
-    document.getElementById('translate-model-hint').classList.toggle('hidden', !model.isTranslateModel);
-    document.getElementById('both-ways-hint').classList.toggle('hidden', !bothWays);
-
-    document.querySelectorAll('.btn-tone-pill').forEach(btn => {
-        btn.disabled = model.isTranslateModel;
-        const base = 'btn-tone-pill flex-1 py-1 px-1 rounded-lg font-label-sm text-[10px] text-center transition-all';
-        const look = btn.getAttribute('data-tone') === tone
-            ? 'bg-primary-container text-on-primary-container font-bold'
-            : 'bg-surface-container-highest text-on-surface-variant hover:text-on-surface';
-        btn.className = `${base} ${look} ${model.isTranslateModel ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`;
+    document.getElementById('voice-group').classList.toggle('hidden', !plan.playAudio);
+    document.querySelectorAll('.btn-voice-pill').forEach(btn => {
+        const voice = VOICES.find(v => v.name === btn.getAttribute('data-voice'));
+        btn.title = voice.style;
+        btn.className = pillClass('btn-voice-pill py-1.5 px-1 rounded-lg font-label-sm text-[11px] text-center transition-all cursor-pointer', voice.name === state.voice);
     });
+
+    renderMic();
+}
+
+const MIC_BASE = 'w-28 h-28 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer active:scale-95';
+const MIC_LOOKS = {
+    idle: 'bg-gradient-to-br from-primary to-primary-container text-on-primary shadow-[0_0_32px_rgba(160,120,255,0.6)]',
+    stop: 'bg-error text-on-error shadow-[0_0_32px_rgba(255,180,171,0.5)]',
+    me: 'bg-tertiary text-on-tertiary shadow-[0_0_32px_rgba(123,208,255,0.7)]',
+    them: 'bg-primary-container text-on-primary-container shadow-[0_0_32px_rgba(160,120,255,0.7)]'
+};
+
+function renderMic() {
+    const { status, mode, talkSpeaker } = state;
+    const plan = getSessionPlan();
+    const isConnecting = status === 'connecting';
+    const isIdle = status === 'disconnected';
+    let look = 'idle';
+    let icon = 'mic';
+    let label = 'Tap the mic to start';
+    let hint = '';
+
+    if (!isIdle && mode === 'talk') {
+        look = talkSpeaker;
+        label = talkSpeaker === 'me' ? `You're speaking · ${plan.from.name}` : `They're speaking · ${plan.from.name}`;
+        hint = isConnecting ? 'Connecting…' : `Gemini says it in ${plan.to.name}. Tap the mic to switch.`;
+    } else if (!isIdle) {
+        look = 'stop';
+        icon = 'stop';
+        label = mode === 'listen' ? 'Listening…' : `Listening · speak ${plan.from.name}`;
+        hint = isConnecting ? 'Connecting…' : 'Tap to stop.';
+    } else if (mode === 'talk') {
+        hint = 'You speak first. Tap again whenever the other person speaks.';
+    }
+    if (isConnecting) icon = 'hourglass_top';
+
+    document.getElementById('mic-btn').className = `${MIC_BASE} ${MIC_LOOKS[look]} ${status === 'connected' ? 'animate-pulse-glow' : ''}`;
+    document.getElementById('mic-btn-icon').textContent = icon;
+    document.getElementById('mic-status').textContent = label;
+    document.getElementById('mic-hint').textContent = hint;
+    document.getElementById('stop-btn').classList.toggle('hidden', isIdle || mode !== 'talk');
+}
+
+function updateLiveStatusUI(status) {
+    state.status = status;
+    renderMic();
 }
 
 function restartIfLive() {
@@ -180,78 +252,92 @@ function openLanguagePicker(type) {
     langDialog.showModal();
 }
 
+// Listen mode: Live Translate reports the language it heard, which becomes their language
+function applyDetectedLanguage(code) {
+    const normalized = code.toLowerCase();
+    const candidates = SUPPORTED_LANGUAGES.filter(lang => lang.code !== state.sourceLang.code);
+    const match = candidates.find(lang => getTranslationLanguageCode(lang).toLowerCase() === normalized)
+        || candidates.find(lang => getTranslationLanguageCode(lang).split('-')[0].toLowerCase() === normalized.split('-')[0]);
+    if (!match || match.code === state.targetLang.code) return;
+    state.targetLang = match;
+    updateLanguageUI();
+}
+
 // -----------------------------------------------------------------------------
-// Live WebSocket Toggle Manager
+// Live Session Controls
 // -----------------------------------------------------------------------------
 function startSession() {
     state.currentTurn = null;
-    const { from, to } = getSessionLanguages();
+    const plan = getSessionPlan();
     connectGeminiLive({
         apiKey: state.apiKey,
-        model: getSessionModel().id,
-        sourceLang: from,
-        targetLang: to,
-        targetTone: state.targetTone,
-        bothWays: state.direction === 'both',
-        isMuted: () => state.isMuted,
+        model: plan.model.id,
+        sourceLang: plan.from,
+        targetLang: plan.to,
+        voiceName: state.voice,
+        playAudio: plan.playAudio,
+        silenceWhilePlaying: plan.playAudio,
+        listeningMessage: getListeningMessage(plan),
         onStatusChange: updateLiveStatusUI,
-        onInputText: (text) => appendToTurn('source', text),
+        onInputText: (text, languageCode) => {
+            if (state.mode === 'listen' && languageCode) applyDetectedLanguage(languageCode);
+            appendToTurn('source', text);
+        },
         onOutputText: (text) => appendToTurn('translation', text),
         onTurnEnd: () => { state.currentTurn = null; },
         showToast
     });
 }
 
-function toggleLiveSession() {
-    if (isSessionActive()) {
-        disconnectGeminiLive();
-        updateLiveStatusUI('disconnected');
+function stopSession() {
+    disconnectGeminiLive();
+    updateLiveStatusUI('disconnected');
+}
+
+function handleMicTap() {
+    unlockPlayback();
+    if (state.mode === 'talk' && isSessionActive()) {
+        state.talkSpeaker = state.talkSpeaker === 'me' ? 'them' : 'me';
+        updateLanguageUI();
+        startSession();
         return;
     }
-
-    unlockPlayback();
+    if (isSessionActive()) {
+        stopSession();
+        return;
+    }
     if (!state.apiKey) {
         state.startAfterSettings = true;
         openSettings();
         promptForApiKey();
         return;
     }
+    state.talkSpeaker = 'me';
+    updateLanguageUI();
     startSession();
 }
 
-function updateLiveStatusUI(status) {
-    const isLive = status === 'connected';
-    const isConnecting = status === 'connecting';
-    const headerLabels = { connected: 'Stop Live', connecting: 'Connecting…', disconnected: 'Start Live' };
-    const masterLabels = { connected: 'STOP LIVE TRANSLATION', connecting: 'CONNECTING… (CANCEL)', disconnected: 'START LIVE TRANSLATION' };
-    const pillLabels = { connected: 'Listening', connecting: 'Connecting', disconnected: 'Standby' };
-    const icon = isConnecting ? 'hourglass_top' : isLive ? 'stop' : 'play_arrow';
-
-    document.getElementById('rec-dot').textContent = icon;
-    document.getElementById('rec-label').textContent = headerLabels[status];
-    document.getElementById('master-btn-icon').textContent = icon;
-    document.getElementById('master-btn-label').textContent = masterLabels[status];
-
-    document.getElementById('rec-toggle-btn').className = isLive
-        ? 'flex items-center gap-space-xs px-3 sm:px-4 py-1.5 rounded-full bg-error text-on-error hover:bg-error-container hover:text-on-error-container transition-all font-bold text-xs sm:text-label-sm cursor-pointer'
-        : 'flex items-center gap-space-xs px-3 sm:px-4 py-1.5 rounded-full bg-primary-container text-on-primary-container hover:bg-primary hover:text-on-primary transition-all font-bold text-xs sm:text-label-sm shadow-[0_0_16px_rgba(160,120,255,0.4)] cursor-pointer';
-    document.getElementById('master-live-btn').className = isLive
-        ? 'flex-1 xl:flex-initial flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-error text-on-error font-bold text-body-sm hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer'
-        : 'flex-1 xl:flex-initial flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-primary to-primary-container hover:from-primary-container hover:to-primary text-on-primary font-bold text-body-sm shadow-[0_0_24px_rgba(160,120,255,0.6)] hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer';
-
-    const pill = document.getElementById('master-live-status-pill');
-    pill.textContent = pillLabels[status];
-    pill.className = isLive
-        ? 'self-start px-2 py-0.5 rounded-full bg-secondary/20 text-secondary font-label-sm text-[10px] font-bold uppercase tracking-wider animate-pulse'
-        : 'self-start px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant font-label-sm text-[10px] font-bold uppercase tracking-wider';
-    document.getElementById('master-live-pulse-ring').className = isLive
-        ? 'w-11 h-11 rounded-2xl bg-secondary/20 border border-secondary/40 flex items-center justify-center text-secondary shrink-0 shadow-inner animate-pulse'
-        : 'w-11 h-11 rounded-2xl bg-surface-container-lowest border border-white/[0.08] flex items-center justify-center text-primary shrink-0 shadow-inner';
+function selectMode(mode) {
+    if (mode === state.mode) return;
+    if (isSessionActive()) stopSession();
+    state.mode = mode;
+    state.talkSpeaker = 'me';
+    state.currentTurn = null;
+    updateLanguageUI();
 }
 
 // -----------------------------------------------------------------------------
 // Live Transcript
 // -----------------------------------------------------------------------------
+// Gemini 3.8 Live sometimes leaks working notes like "🧠[ja]<not fr>…✨" around the translation
+function cleanTranscript(text) {
+    return text
+        .replace(/🧠[\s\S]*?(✨|$)/g, '')
+        .replace(/<partial>|\{cont\}|✨/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
 function createTranscriptCell(borderClass, label) {
     const cell = document.createElement('div');
     cell.className = `rounded-xl bg-surface-container-low/95 p-space-sm flex flex-col gap-space-xs shadow-md ${borderClass}`;
@@ -268,19 +354,17 @@ function createTranscriptCell(borderClass, label) {
 // Transcripts arrive as fragments, so each turn is one row that keeps growing
 function appendToTurn(field, text) {
     if (!state.currentTurn) {
-        // Both ways, each turn can go either way, so the rows can't name a language
-        const bothWays = state.direction === 'both';
-        const { from, to } = getSessionLanguages();
+        const plan = getSessionPlan();
         const turn = {
             time: new Date().toLocaleTimeString(),
-            sourceName: bothWays ? 'Heard' : from.name,
-            targetName: bothWays ? 'Translation' : to.name,
+            sourceName: plan.from.name,
+            targetName: plan.to.name,
             source: '',
             translation: ''
         };
         const row = document.createElement('div');
         row.className = 'grid grid-cols-1 md:grid-cols-2 gap-space-sm';
-        const sourceCell = createTranscriptCell('border-l-2 border-secondary', turn.time);
+        const sourceCell = createTranscriptCell('border-l-2 border-secondary', `${turn.time} · ${turn.sourceName}`);
         const translationCell = createTranscriptCell('border-l-2 border-primary-container', turn.targetName);
         row.append(sourceCell.cell, translationCell.cell);
         document.getElementById('transcript-rows').appendChild(row);
@@ -295,7 +379,7 @@ function appendToTurn(field, text) {
 
     const turn = state.currentTurn;
     turn[field] += text;
-    turn[`${field}El`].textContent = turn[field].trim();
+    turn[`${field}El`].textContent = cleanTranscript(turn[field]) || '…';
     turn.row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
@@ -315,7 +399,7 @@ function downloadMarkdownFile() {
         return;
     }
     const dateStr = new Date().toISOString().split('T')[0];
-    const turns = state.turns.map(t => `**${t.time}**\n\n- ${t.sourceName}: ${t.source.trim()}\n- ${t.targetName}: ${t.translation.trim()}`);
+    const turns = state.turns.map(t => `**${t.time}**\n\n- ${t.sourceName}: ${cleanTranscript(t.source)}\n- ${t.targetName}: ${cleanTranscript(t.translation)}`);
     const content = `# Live Translation Transcript\n\n**Date:** ${dateStr}\n\n${turns.join('\n\n')}\n`;
 
     const url = URL.createObjectURL(new Blob([content], { type: 'text/markdown;charset=utf-8' }));
@@ -333,7 +417,7 @@ function copyTranscript() {
         showToast("Nothing to copy yet.", "info", "info");
         return;
     }
-    const log = state.turns.map(t => `[${t.time}]\n${t.source.trim()}\n${t.translation.trim()}`).join('\n\n');
+    const log = state.turns.map(t => `[${t.time}]\n${cleanTranscript(t.source)}\n${cleanTranscript(t.translation)}`).join('\n\n');
     navigator.clipboard.writeText(log).then(() => showToast("Transcript copied", "success", "content_copy"));
 }
 
@@ -342,11 +426,9 @@ function copyTranscript() {
 // -----------------------------------------------------------------------------
 const settingsDialog = document.getElementById('settings-dialog');
 const settingApiKey = document.getElementById('setting-api-key');
-const modelSelect = document.getElementById('setting-model-select');
 
 function openSettings() {
     settingApiKey.value = state.apiKey;
-    modelSelect.value = state.selectedModel;
     document.getElementById('settings-key-prompt').classList.add('hidden');
     settingsDialog.showModal();
 }
@@ -366,13 +448,12 @@ function saveSettings() {
 
     state.apiKey = settingApiKey.value.trim();
     localStorage.setItem('gemini_api_key', state.apiKey);
-    state.selectedModel = modelSelect.value;
-    localStorage.setItem('gemini_model', state.selectedModel);
-    updateLanguageUI();
     settingsDialog.close();
 
     if (state.startAfterSettings && state.apiKey) {
         state.startAfterSettings = false;
+        state.talkSpeaker = 'me';
+        updateLanguageUI();
         startSession();
     } else {
         restartIfLive();
@@ -383,6 +464,10 @@ function saveSettings() {
 // DOM Event Listeners Initialization
 // -----------------------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.btn-mode-tab').forEach(btn => {
+        btn.addEventListener('click', () => selectMode(btn.getAttribute('data-mode')));
+    });
+
     // Language Selector Buttons
     document.getElementById('source-lang-btn').addEventListener('click', () => openLanguagePicker('source'));
     document.getElementById('target-lang-btn').addEventListener('click', () => openLanguagePicker('target'));
@@ -396,36 +481,18 @@ document.addEventListener('DOMContentLoaded', () => {
         restartIfLive();
     });
 
-    document.querySelectorAll('.btn-direction-pill').forEach(btn => {
+    document.querySelectorAll('.btn-voice-pill').forEach(btn => {
         btn.addEventListener('click', () => {
-            state.direction = btn.getAttribute('data-direction');
+            state.voice = btn.getAttribute('data-voice');
             updateLanguageUI();
-            restartIfLive();
-        });
-    });
-
-    document.querySelectorAll('.btn-tone-pill').forEach(btn => {
-        btn.addEventListener('click', () => {
-            state.targetTone = btn.getAttribute('data-tone');
-            updateLanguageUI();
-            showToast(`Tone set: ${TONE_LABELS[state.targetTone]}`, "purple", "tune");
+            showToast(`Voice set: ${state.voice}`, "purple", "record_voice_over");
             restartIfLive();
         });
     });
 
     // Live Translation Controls
-    document.getElementById('rec-toggle-btn').addEventListener('click', toggleLiveSession);
-    document.getElementById('master-live-btn').addEventListener('click', toggleLiveSession);
-
-    const muteBtn = document.getElementById('mute-toggle');
-    muteBtn.addEventListener('click', () => {
-        state.isMuted = !state.isMuted;
-        document.getElementById('mic-icon').textContent = state.isMuted ? 'mic_off' : 'mic';
-        document.getElementById('mute-label').textContent = state.isMuted ? 'Muted' : 'Mute';
-        muteBtn.classList.toggle('bg-surface-container-high', !state.isMuted);
-        muteBtn.classList.toggle('bg-error-container', state.isMuted);
-        muteBtn.classList.toggle('text-on-error-container', state.isMuted);
-    });
+    document.getElementById('mic-btn').addEventListener('click', handleMicTap);
+    document.getElementById('stop-btn').addEventListener('click', stopSession);
 
     // Transcript Actions
     document.getElementById('btn-export-md').addEventListener('click', downloadMarkdownFile);
@@ -433,9 +500,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-clear-log').addEventListener('click', clearTranscript);
 
     // Settings Modal
-    LIVE_MODELS.forEach(model => modelSelect.add(new Option(model.label, model.id)));
     document.getElementById('header-settings-btn').addEventListener('click', openSettings);
-    document.getElementById('engine-badge-btn').addEventListener('click', openSettings);
     document.getElementById('close-settings-btn').addEventListener('click', () => settingsDialog.close());
     document.getElementById('cancel-settings-btn').addEventListener('click', () => settingsDialog.close());
     settingsDialog.addEventListener('close', () => { state.startAfterSettings = false; });

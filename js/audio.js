@@ -125,8 +125,6 @@ export async function startMicCapture(onPcmChunkCallback, options = {}) {
     micProcessor = micContext.createScriptProcessor(2048, 1, 1);
 
     micProcessor.onaudioprocess = (e) => {
-        if (options.isMuted?.()) return;
-
         const inputData = e.inputBuffer.getChannelData(0);
         const pcm16 = new Int16Array(inputData.length);
         // Silenced audio still goes out as zeros, so Gemini keeps hearing a live stream

@@ -1,5 +1,5 @@
 // Gemini Live Multimodal WebSocket Client
-import { buildBothWaysInstruction, buildSystemInstruction, getLiveModel, getTranslationLanguageCode } from './config.js';
+import { buildSystemInstruction, getLiveModel, getTranslationLanguageCode } from './config.js';
 import { flushPlayback, getPlaybackState, isPlaybackBusy, playPcmChunk, startMicCapture, stopMicCapture } from './audio.js';
 
 const ENDPOINT = 'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent';
@@ -10,7 +10,7 @@ export function isSessionActive() {
     return ws !== null;
 }
 
-function buildSetupMessage(model, sourceLang, targetLang, targetTone, bothWays) {
+function buildSetupMessage(model, sourceLang, targetLang, voiceName) {
     // The Live Translate model takes no system instruction or voice
     if (getLiveModel(model).isTranslateModel) {
         return {
@@ -36,16 +36,14 @@ function buildSetupMessage(model, sourceLang, targetLang, targetTone, bothWays) 
                 speechConfig: {
                     voiceConfig: {
                         prebuiltVoiceConfig: {
-                            voiceName: targetLang.voiceName
+                            voiceName
                         }
                     }
                 }
             },
             systemInstruction: {
                 parts: [{
-                    text: bothWays
-                        ? buildBothWaysInstruction(sourceLang, targetLang, targetTone)
-                        : buildSystemInstruction(sourceLang, targetLang, targetTone)
+                    text: buildSystemInstruction(sourceLang, targetLang)
                 }]
             },
             inputAudioTranscription: {},
@@ -66,9 +64,10 @@ export function connectGeminiLive({
     model,
     sourceLang,
     targetLang,
-    targetTone,
-    bothWays,
-    isMuted,
+    voiceName,
+    playAudio,
+    silenceWhilePlaying,
+    listeningMessage,
     onStatusChange,
     onInputText,
     onOutputText,
@@ -96,7 +95,7 @@ export function connectGeminiLive({
     socket.onopen = () => {
         if (ws !== socket) return;
         console.log("WebSocket opened. Sending setup for model:", model);
-        socket.send(JSON.stringify(buildSetupMessage(model, sourceLang, targetLang, targetTone, bothWays)));
+        socket.send(JSON.stringify(buildSetupMessage(model, sourceLang, targetLang, voiceName)));
     };
 
     socket.onmessage = async (event) => {
@@ -124,8 +123,8 @@ export function connectGeminiLive({
                             }
                         }));
                     }
-                // Both ways, the mic would hear the translation and translate it straight back
-                }, { isMuted, isSilenced: bothWays ? isPlaybackBusy : undefined });
+                // Otherwise the mic hears the spoken translation, which can cut it off or loop it back
+                }, { isSilenced: silenceWhilePlaying ? isPlaybackBusy : undefined });
             } catch (micErr) {
                 console.error("Microphone capture error:", micErr);
                 if (ws !== socket) return;
@@ -136,9 +135,7 @@ export function connectGeminiLive({
             }
             if (ws !== socket) return;
             onStatusChange('connected');
-            showToast(bothWays
-                ? `Listening for ${sourceLang.name} and ${targetLang.name}.`
-                : `Listening for ${sourceLang.name} to translate into ${targetLang.name}.`, "success", "mic");
+            showToast(listeningMessage, "success", "mic");
             return;
         }
 
@@ -153,10 +150,10 @@ export function connectGeminiLive({
         content.modelTurn?.parts?.forEach(part => {
             if (part.inlineData?.data) {
                 stats.audioChunks++;
-                playPcmChunk(part.inlineData.data);
+                if (playAudio) playPcmChunk(part.inlineData.data);
             }
         });
-        if (content.inputTranscription?.text) onInputText(content.inputTranscription.text);
+        if (content.inputTranscription?.text) onInputText(content.inputTranscription.text, content.inputTranscription.languageCode);
         if (content.outputTranscription?.text) onOutputText(content.outputTranscription.text);
 
         // 3. Handle interruption and end of turn
