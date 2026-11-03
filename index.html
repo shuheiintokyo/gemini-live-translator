@@ -251,7 +251,7 @@
 
     <!-- SETTINGS MODAL -->
     <dialog id="settings-dialog" class="p-0 rounded-3xl bg-surface-container-low border border-white/[0.12] text-on-surface shadow-2xl max-w-lg w-[95vw] outline-none">
-        <div class="p-space-md sm:p-space-lg flex flex-col gap-space-md">
+        <div class="p-space-md sm:p-space-lg flex flex-col gap-space-md max-h-[85vh] overflow-y-auto">
             <div class="flex items-center justify-between pb-space-xs border-b border-white/[0.08]">
                 <span class="font-headline-sm text-body-md sm:text-headline-sm font-bold">Settings</span>
                 <button id="close-settings-btn" class="p-1 rounded-full hover:bg-surface-container-high text-on-surface-variant cursor-pointer" type="button">
@@ -266,7 +266,6 @@
                 </div>
                 <p id="settings-key-prompt" class="hidden p-space-sm rounded-xl bg-error-container text-on-error-container text-body-sm leading-snug">
                     This browser has no API key yet. Paste your key below, then tap Save. Each phone or computer needs its own copy.
-                    <a class="underline font-bold" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Get a key</a>
                 </p>
                 <div class="relative flex items-center">
                     <input id="setting-api-key" type="password" placeholder="Paste your API key here" class="w-full bg-surface-container-high text-on-surface p-space-sm rounded-xl border border-white/[0.08] outline-none pr-10 font-mono text-xs" />
@@ -274,11 +273,159 @@
                         <span class="material-symbols-outlined text-[18px]">visibility</span>
                     </button>
                 </div>
+                <button id="open-key-guide-btn" class="self-start flex items-center gap-1 pt-1 text-secondary font-bold text-label-md hover:underline cursor-pointer" type="button">
+                    <span class="material-symbols-outlined text-[18px]">help</span>
+                    New here? How to get a free key
+                </button>
             </div>
+
+            <details class="group rounded-xl bg-surface-container-high/60 border border-white/[0.06]">
+                <summary class="flex items-center justify-between gap-space-xs p-space-sm cursor-pointer list-none">
+                    <span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Models this app uses</span>
+                    <span class="material-symbols-outlined text-[18px] text-on-surface-variant transition-transform group-open:rotate-180">expand_more</span>
+                </summary>
+                <div class="px-space-sm pb-space-sm flex flex-col gap-space-sm text-body-sm leading-snug">
+                    <p class="text-on-surface-variant">Each tab picks its model for you. Both are free on Google's free tier.</p>
+                    <div>
+                        <p class="font-bold text-on-surface">Gemini 3.8 Live · Speak and Talk</p>
+                        <p class="text-on-surface-variant">Google's main model for live voice. You can choose its voice. It waits for a short pause, then translates what you said.</p>
+                    </div>
+                    <div>
+                        <p class="font-bold text-on-surface">Gemini 3.5 Live Translate (Preview) · Listen</p>
+                        <p class="text-on-surface-variant">Built for translation. It detects the language and translates as people talk, without waiting for pauses. Its voice can't be chosen and may change, so this app shows its text only.</p>
+                    </div>
+                    <div>
+                        <p class="font-bold text-on-surface">Not used here</p>
+                        <p class="text-on-surface-variant">Gemini 3.8 Live Extended Thinking reasons more but responds more slowly. Gemini 4 Argon is a reasoning model and isn't listed by Google as a live voice model.</p>
+                    </div>
+                </div>
+            </details>
 
             <div class="flex items-center justify-end gap-space-sm pt-space-xs border-t border-white/[0.08]">
                 <button id="cancel-settings-btn" class="px-space-md py-2 rounded-full text-on-surface-variant hover:text-on-surface text-label-md cursor-pointer" type="button">Cancel</button>
                 <button id="save-settings-btn" class="px-space-lg py-2 rounded-full bg-primary-container text-on-primary-container font-bold text-label-md hover:bg-primary transition-all shadow-md cursor-pointer" type="button">Save</button>
+            </div>
+        </div>
+    </dialog>
+
+
+    <!-- API KEY SETUP GUIDE -->
+    <dialog id="key-guide-dialog" class="p-0 rounded-3xl bg-surface-container-low border border-white/[0.12] text-on-surface shadow-2xl max-w-md w-[95vw] outline-none">
+        <div class="p-space-md sm:p-space-lg flex flex-col gap-space-md max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between pb-space-xs border-b border-white/[0.08]">
+                <span class="font-headline-sm text-body-md sm:text-headline-sm font-bold">Get your free API key</span>
+                <button id="close-key-guide-btn" class="p-1 rounded-full hover:bg-surface-container-high text-on-surface-variant cursor-pointer" type="button" aria-label="Close">
+                    <span class="material-symbols-outlined text-[20px]">close</span>
+                </button>
+            </div>
+
+            <!-- Step 1 -->
+            <section class="guide-step flex flex-col gap-space-sm" data-step="1">
+                <div class="guide-screen">
+                    <div class="guide-browser-bar"><span class="material-symbols-outlined text-[14px]">lock</span>aistudio.google.com/apikey</div>
+                    <div class="flex flex-col items-center justify-center gap-2 py-6">
+                        <span class="material-symbols-outlined text-[44px] text-primary">auto_awesome</span>
+                        <span class="text-[13px] font-bold text-on-surface">Google AI Studio</span>
+                    </div>
+                </div>
+                <h3 class="font-headline-sm text-body-md font-bold">1. Open Google AI Studio</h3>
+                <p class="text-body-sm text-on-surface-variant leading-snug">It's Google's free site for using Gemini. It opens in a new tab, so this page stays here for later.</p>
+                <a class="self-start flex items-center gap-1 px-space-md py-2 rounded-full bg-secondary text-on-secondary font-bold text-label-md" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">
+                    Open Google AI Studio <span class="material-symbols-outlined text-[16px]">open_in_new</span>
+                </a>
+            </section>
+
+            <!-- Step 2 -->
+            <section class="guide-step hidden flex flex-col gap-space-sm" data-step="2">
+                <div class="guide-screen">
+                    <div class="guide-browser-bar"><span class="material-symbols-outlined text-[14px]">lock</span>accounts.google.com</div>
+                    <div class="flex flex-col gap-2 p-4">
+                        <span class="text-[13px] font-bold text-on-surface text-center">Choose an account</span>
+                        <div class="guide-highlight flex items-center gap-2 p-2 rounded-xl">
+                            <span class="w-7 h-7 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container text-[12px] font-bold">A</span>
+                            <span class="text-[12px] text-on-surface">your.name@gmail.com</span>
+                        </div>
+                        <div class="flex items-center gap-2 p-2 rounded-xl text-on-surface-variant">
+                            <span class="material-symbols-outlined text-[20px]">person_add</span>
+                            <span class="text-[12px]">Use another account</span>
+                        </div>
+                    </div>
+                </div>
+                <h3 class="font-headline-sm text-body-md font-bold">2. Sign in with Google</h3>
+                <p class="text-body-sm text-on-surface-variant leading-snug">Any Google account works. If it's your first visit, accept the terms. Google may set up a first project and key for you automatically.</p>
+            </section>
+
+            <!-- Step 3 -->
+            <section class="guide-step hidden flex flex-col gap-space-sm" data-step="3">
+                <div class="guide-screen">
+                    <div class="guide-browser-bar"><span class="material-symbols-outlined text-[14px]">lock</span>aistudio.google.com/apikey</div>
+                    <div class="flex items-center justify-between gap-2 p-4">
+                        <span class="text-[14px] font-bold text-on-surface">API Keys</span>
+                        <span class="guide-highlight relative flex items-center gap-1 px-3 py-1.5 rounded-full text-[12px] font-bold text-on-surface">
+                            <span class="material-symbols-outlined text-[16px]">add</span>Create API key
+                            <span class="material-symbols-outlined absolute -bottom-5 right-0 text-[22px] text-on-surface">arrow_selector_tool</span>
+                        </span>
+                    </div>
+                    <div class="mx-4 mb-4 h-8 rounded-lg bg-surface-container-high/70"></div>
+                </div>
+                <h3 class="font-headline-sm text-body-md font-bold">3. Create an API key</h3>
+                <p class="text-body-sm text-on-surface-variant leading-snug">Click <strong class="text-on-surface">Create API key</strong>. If it asks for a project, choose the default one. If a key is already listed, you can use that one instead.</p>
+            </section>
+
+            <!-- Step 4 -->
+            <section class="guide-step hidden flex flex-col gap-space-sm" data-step="4">
+                <div class="guide-screen">
+                    <div class="guide-browser-bar"><span class="material-symbols-outlined text-[14px]">lock</span>aistudio.google.com/apikey</div>
+                    <div class="flex flex-col gap-1 p-4">
+                        <span class="text-[11px] text-on-surface-variant">Your API key</span>
+                        <div class="flex items-center justify-between gap-2 p-2 rounded-lg bg-surface-container-high/80">
+                            <span class="font-mono text-[12px] text-on-surface">••••••••••••••••3f9a</span>
+                            <span class="guide-highlight relative flex items-center p-1 rounded-md">
+                                <span class="material-symbols-outlined text-[18px] text-on-surface">content_copy</span>
+                                <span class="absolute -top-7 right-0 px-2 py-0.5 rounded bg-secondary text-on-secondary text-[10px] font-bold">Copied</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <h3 class="font-headline-sm text-body-md font-bold">4. Copy the key</h3>
+                <p class="text-body-sm text-on-surface-variant leading-snug">Use the copy button next to your new key. It's a long line of letters and numbers.</p>
+            </section>
+
+            <!-- Step 5 -->
+            <section class="guide-step hidden flex flex-col gap-space-sm" data-step="5">
+                <div class="guide-screen flex items-center justify-center py-6 gap-3">
+                    <span class="material-symbols-outlined text-[48px] text-secondary">lock</span>
+                    <span class="material-symbols-outlined text-[36px] text-primary">key</span>
+                </div>
+                <h3 class="font-headline-sm text-body-md font-bold">5. Keep it private</h3>
+                <ul class="flex flex-col gap-1.5 text-body-sm text-on-surface-variant leading-snug list-disc pl-5">
+                    <li>Treat it like a password. Anyone who has it can use your Gemini quota.</li>
+                    <li>Save it somewhere private, such as a password manager.</li>
+                    <li>Never post it online or share it in chats, screenshots or code.</li>
+                    <li>If it ever leaks, delete it in AI Studio and create a new one.</li>
+                    <li>The free tier is enough for this app, so you don't need to set up billing. With billing on, usage can cost money.</li>
+                </ul>
+            </section>
+
+            <!-- Step 6 -->
+            <section class="guide-step hidden flex flex-col gap-space-sm" data-step="6">
+                <div class="guide-screen p-4 flex flex-col gap-2">
+                    <span class="text-[11px] text-on-surface-variant uppercase">Google AI Studio API Key</span>
+                    <div class="guide-highlight flex items-center justify-between p-2 rounded-lg">
+                        <span class="font-mono text-[12px] text-on-surface-variant">Paste your API key here</span>
+                        <span class="material-symbols-outlined text-[18px] text-on-surface">content_paste</span>
+                    </div>
+                    <span class="self-end px-3 py-1 rounded-full bg-primary-container text-on-primary-container text-[12px] font-bold">Save</span>
+                </div>
+                <h3 class="font-headline-sm text-body-md font-bold">6. Paste it here and save</h3>
+                <p class="text-body-sm text-on-surface-variant leading-snug">Come back to this tab, paste the key into Settings and tap <strong class="text-on-surface">Save</strong>. It's stored only on this device, so each phone or computer needs its own copy.</p>
+                <button id="key-guide-paste-btn" class="self-start px-space-md py-2 rounded-full bg-primary-container text-on-primary-container font-bold text-label-md cursor-pointer" type="button">Paste my key now</button>
+            </section>
+
+            <div class="flex items-center justify-between gap-space-sm pt-space-xs border-t border-white/[0.08]">
+                <button id="key-guide-back-btn" class="px-space-md py-2 rounded-full text-on-surface-variant hover:text-on-surface text-label-md cursor-pointer disabled:opacity-30 disabled:cursor-default" type="button">Back</button>
+                <div id="key-guide-dots" class="flex items-center gap-1.5" aria-hidden="true"></div>
+                <button id="key-guide-next-btn" class="px-space-lg py-2 rounded-full bg-primary-container text-on-primary-container font-bold text-label-md cursor-pointer disabled:opacity-30 disabled:cursor-default" type="button">Next</button>
             </div>
         </div>
     </dialog>

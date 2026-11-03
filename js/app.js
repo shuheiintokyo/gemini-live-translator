@@ -461,6 +461,28 @@ function saveSettings() {
 }
 
 // -----------------------------------------------------------------------------
+// API Key Setup Guide
+// -----------------------------------------------------------------------------
+const keyGuideDialog = document.getElementById('key-guide-dialog');
+const keyGuideSteps = [...document.querySelectorAll('.guide-step')];
+let keyGuideStep = 0;
+
+function showKeyGuideStep(index) {
+    keyGuideStep = index;
+    keyGuideSteps.forEach((step, i) => step.classList.toggle('hidden', i !== index));
+    document.getElementById('key-guide-back-btn').disabled = index === 0;
+    document.getElementById('key-guide-next-btn').disabled = index === keyGuideSteps.length - 1;
+    document.getElementById('key-guide-dots').innerHTML = keyGuideSteps
+        .map((_, i) => `<span class="w-2 h-2 rounded-full ${i === index ? 'bg-secondary' : 'bg-surface-container-highest'}"></span>`)
+        .join('');
+}
+
+function openKeyGuide() {
+    showKeyGuideStep(0);
+    keyGuideDialog.showModal();
+}
+
+// -----------------------------------------------------------------------------
 // DOM Event Listeners Initialization
 // -----------------------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
@@ -508,6 +530,17 @@ document.addEventListener('DOMContentLoaded', () => {
         settingApiKey.type = settingApiKey.type === 'password' ? 'text' : 'password';
     });
     document.getElementById('save-settings-btn').addEventListener('click', saveSettings);
+
+    // API Key Setup Guide
+    document.getElementById('open-key-guide-btn').addEventListener('click', openKeyGuide);
+    document.getElementById('close-key-guide-btn').addEventListener('click', () => keyGuideDialog.close());
+    document.getElementById('key-guide-back-btn').addEventListener('click', () => showKeyGuideStep(keyGuideStep - 1));
+    document.getElementById('key-guide-next-btn').addEventListener('click', () => showKeyGuideStep(keyGuideStep + 1));
+    document.getElementById('key-guide-paste-btn').addEventListener('click', () => {
+        keyGuideDialog.close();
+        if (!settingsDialog.open) settingsDialog.showModal();
+        settingApiKey.focus();
+    });
 
     updateLanguageUI();
     updateLiveStatusUI('disconnected');

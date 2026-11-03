@@ -42,3 +42,27 @@ dialog::backdrop {
         border-bottom-right-radius: 0;
     }
 }
+
+/* Illustrations in the API key guide: simplified screens, not real Google pages */
+.guide-screen {
+    border-radius: 1rem;
+    background: #0a0e18;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+}
+
+.guide-browser-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.4rem 0.75rem;
+    background: #262a35;
+    color: #cbc3d7;
+    font-size: 11px;
+    font-family: "Space Mono", monospace;
+}
+
+.guide-highlight {
+    background: rgba(76, 215, 246, 0.12);
+    box-shadow: 0 0 0 2px #4cd7f6;
+}
