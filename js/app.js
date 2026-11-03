@@ -1,5 +1,5 @@
 // Main Application Controller & UI Logic
-import { SUPPORTED_LANGUAGES, LIVE_MODELS, VOICES, getLanguageByCode, getTranslationLanguageCode } from './config.js';
+import { SUPPORTED_LANGUAGES, LIVE_MODELS, VOICES, getLanguageByCode, getLiveModel, getTranslationLanguageCode } from './config.js';
 import { unlockPlayback } from './audio.js';
 import { connectGeminiLive, disconnectGeminiLive, isSessionActive } from './websocket.js';
 
@@ -30,6 +30,8 @@ const state = {
     targetLang: getLanguageByCode(localStorage.getItem('gemini_target_lang') || 'JA-JP'),
     mode: MODES[savedMode] ? savedMode : 'speak',
     voice: VOICES.some(v => v.name === savedVoice) ? savedVoice : VOICES[0].name,
+    // getLiveModel falls back to Gemini 3.8 Live for anything unknown
+    speakModel: getLiveModel(localStorage.getItem('gemini_speak_model')).id,
     talkSpeaker: 'me',
     status: 'disconnected',
     apiKey: localStorage.getItem('gemini_api_key') || '',
@@ -77,18 +79,26 @@ function showToast(message, type = 'info', icon = 'info') {
 // -----------------------------------------------------------------------------
 // Session Plan: which model, direction and audio each mode uses
 // -----------------------------------------------------------------------------
-// Voices can only be set on Gemini 3.8 Live; Live Translate picks its own and changes it
-const VOICE_MODEL = LIVE_MODELS.find(m => !m.isTranslateModel);
 // Live Translate detects the spoken language itself and keeps translating without pauses
 const LISTEN_MODEL = LIVE_MODELS.find(m => m.isTranslateModel);
 
-// sourceLang is the user's language and targetLang the other person's
+// sourceLang is the user's language and targetLang the other person's.
+// Speak and Talk use the model chosen in Settings: only Gemini 3.8 Live takes a voice
 function getSessionPlan() {
     const mine = state.sourceLang;
     const theirs = state.targetLang;
-    if (state.mode === 'listen') return { model: LISTEN_MODEL, from: theirs, to: mine, playAudio: false };
+    if (state.mode === 'listen') return { model: LISTEN_MODEL, from: theirs, to: mine, playAudio: false, silenceMic: false };
     const reverse = state.mode === 'talk' && state.talkSpeaker === 'them';
-    return { model: VOICE_MODEL, from: reverse ? theirs : mine, to: reverse ? mine : theirs, playAudio: true };
+    const model = getLiveModel(state.speakModel);
+    return {
+        model,
+        from: reverse ? theirs : mine,
+        to: reverse ? mine : theirs,
+        playAudio: true,
+        // Live Translate interprets while you talk and ignores speech already in the target
+        // language, so it keeps the mic open; Gemini 3.8 Live would hear its own voice
+        silenceMic: !model.isTranslateModel
+    };
 }
 
 function getListeningMessage(plan) {
@@ -118,6 +128,7 @@ function updateLanguageUI() {
     localStorage.setItem('gemini_target_lang', tgt.code);
     localStorage.setItem('gemini_mode', state.mode);
     localStorage.setItem('gemini_voice', state.voice);
+    localStorage.setItem('gemini_speak_model', state.speakModel);
 
     document.getElementById('source-lang-label').textContent = mode.sourceLabel;
     document.getElementById('source-lang-flag').textContent = src.flag;
@@ -138,7 +149,7 @@ function updateLanguageUI() {
         btn.className = pillClass('btn-mode-tab flex flex-col items-center gap-0.5 py-2 rounded-xl font-label-sm text-label-sm transition-all cursor-pointer', isSelected);
     });
 
-    document.getElementById('voice-group').classList.toggle('hidden', !plan.playAudio);
+    document.getElementById('voice-group').classList.toggle('hidden', !plan.playAudio || plan.model.isTranslateModel);
     document.querySelectorAll('.btn-voice-pill').forEach(btn => {
         const voice = VOICES.find(v => v.name === btn.getAttribute('data-voice'));
         btn.title = voice.style;
@@ -276,7 +287,7 @@ function startSession() {
         targetLang: plan.to,
         voiceName: state.voice,
         playAudio: plan.playAudio,
-        silenceWhilePlaying: plan.playAudio,
+        silenceWhilePlaying: plan.silenceMic,
         listeningMessage: getListeningMessage(plan),
         onStatusChange: updateLiveStatusUI,
         onInputText: (text, languageCode) => {
@@ -433,6 +444,7 @@ const settingApiKey = document.getElementById('setting-api-key');
 
 function openSettings() {
     settingApiKey.value = state.apiKey;
+    document.querySelectorAll('input[name="speak-model"]').forEach(input => { input.checked = input.value === state.speakModel; });
     document.getElementById('settings-key-prompt').classList.add('hidden');
     settingsDialog.showModal();
 }
@@ -452,6 +464,8 @@ function saveSettings() {
 
     state.apiKey = settingApiKey.value.trim();
     localStorage.setItem('gemini_api_key', state.apiKey);
+    state.speakModel = document.querySelector('input[name="speak-model"]:checked')?.value || state.speakModel;
+    updateLanguageUI();
     settingsDialog.close();
 
     if (state.startAfterSettings && state.apiKey) {

@@ -279,27 +279,24 @@
                 </button>
             </div>
 
-            <details class="group rounded-xl bg-surface-container-high/60 border border-white/[0.06]">
-                <summary class="flex items-center justify-between gap-space-xs p-space-sm cursor-pointer list-none">
-                    <span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Models this app uses</span>
-                    <span class="material-symbols-outlined text-[18px] text-on-surface-variant transition-transform group-open:rotate-180">expand_more</span>
-                </summary>
-                <div class="px-space-sm pb-space-sm flex flex-col gap-space-sm text-body-sm leading-snug">
-                    <p class="text-on-surface-variant">Each tab picks its model for you. Both are free on Google's free tier.</p>
-                    <div>
-                        <p class="font-bold text-on-surface">Gemini 3.8 Live · Speak and Talk</p>
-                        <p class="text-on-surface-variant">Google's main model for live voice. You can choose its voice. It waits for a short pause, then translates what you said.</p>
-                    </div>
-                    <div>
-                        <p class="font-bold text-on-surface">Gemini 3.5 Live Translate (Preview) · Listen</p>
-                        <p class="text-on-surface-variant">Built for translation. It detects the language and translates as people talk, without waiting for pauses. Its voice can't be chosen and may change, so this app shows its text only.</p>
-                    </div>
-                    <div>
-                        <p class="font-bold text-on-surface">Not used here</p>
-                        <p class="text-on-surface-variant">Gemini 3.8 Live Extended Thinking reasons more but responds more slowly. Gemini 4 Argon is a reasoning model and isn't listed by Google as a live voice model.</p>
-                    </div>
-                </div>
-            </details>
+            <fieldset class="flex flex-col gap-space-xs">
+                <legend class="font-label-sm text-label-sm text-on-surface-variant uppercase pb-1">Model for Speak and Talk</legend>
+                <label class="model-option flex items-start gap-space-sm p-space-sm rounded-xl border cursor-pointer">
+                    <input type="radio" name="speak-model" value="models/gemini-3.8-live" class="mt-1 accent-[#a078ff]" />
+                    <span class="flex flex-col gap-0.5 text-body-sm leading-snug">
+                        <span class="font-bold text-on-surface">Gemini 3.8 Live</span>
+                        <span class="text-on-surface-variant">You choose the voice, and it stays the same. It waits for a short pause, then translates what you said.</span>
+                    </span>
+                </label>
+                <label class="model-option flex items-start gap-space-sm p-space-sm rounded-xl border cursor-pointer">
+                    <input type="radio" name="speak-model" value="models/gemini-3.5-live-translate-preview" class="mt-1 accent-[#a078ff]" />
+                    <span class="flex flex-col gap-0.5 text-body-sm leading-snug">
+                        <span class="font-bold text-on-surface">Gemini 3.5 Live Translate (Preview) · faster</span>
+                        <span class="text-on-surface-variant">Translates while you're still talking, without waiting for pauses. Its voice can't be chosen and may change between male and female.</span>
+                    </span>
+                </label>
+                <p class="text-[11px] text-on-surface-variant leading-snug">Listen always uses Gemini 3.5 Live Translate, as text only. Both models are free on Google's free tier. Gemini 3.8 Live Extended Thinking is slower, and Gemini 4 Argon isn't a live voice model, so neither is offered here.</p>
+            </fieldset>
 
             <div class="flex items-center justify-end gap-space-sm pt-space-xs border-t border-white/[0.08]">
                 <button id="cancel-settings-btn" class="px-space-md py-2 rounded-full text-on-surface-variant hover:text-on-surface text-label-md cursor-pointer" type="button">Cancel</button>

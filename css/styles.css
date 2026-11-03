@@ -66,3 +66,13 @@ dialog::backdrop {
     background: rgba(76, 215, 246, 0.12);
     box-shadow: 0 0 0 2px #4cd7f6;
 }
+
+.model-option {
+    border-color: rgba(255, 255, 255, 0.06);
+    background: rgba(38, 42, 53, 0.6);
+}
+
+.model-option:has(input:checked) {
+    border-color: #a078ff;
+    background: rgba(160, 120, 255, 0.12);
+}
