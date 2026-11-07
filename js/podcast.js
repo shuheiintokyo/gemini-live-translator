@@ -1,8 +1,8 @@
 // Podcast Subtitles: plays an episode file and shows live subtitles from Gemini
 import { SUPPORTED_LANGUAGES, LIVE_MODELS, getLanguageByCode, getTranslationLanguageCode } from './config.js';
-import { startElementCapture, unlockElementPlayback } from './audio.js';
+import { startElementCapture } from './audio.js';
 import { connectGeminiLive, disconnectGeminiLive, isSessionActive } from './websocket.js';
-import { SubtitlePreparer } from './prepare.js';
+import { SubtitlePreparer, decodeEpisode } from './prepare.js';
 
 // Live Translate transcribes and translates continuously, which suits long talk
 const SUBTITLE_MODEL = LIVE_MODELS.find(m => m.isTranslateModel);
@@ -27,6 +27,8 @@ const state = {
     // Prepared reads ahead of the player and times each line; Live follows the audio as it plays
     mode: localStorage.getItem('gemini_podcast_mode') === 'live' ? 'live' : 'prepared',
     episodeFile: null,
+    samplesFile: null,
+    samplesPromise: null,
     preparer: null,
     cues: [],
     shownCue: -1,
@@ -101,6 +103,8 @@ async function loadEpisodes(fileList) {
         return { file, title: tags.title || fallback, show: tags.show || '' };
     }));
     state.episodes = episodes.sort((a, b) => b.file.lastModified - a.file.lastModified);
+    // The help has done its job once something is loaded
+    $('podcast-help').open = false;
     renderEpisodes();
     if (state.episodes.length === 1) selectEpisode(state.episodes[0]);
 }
@@ -278,6 +282,15 @@ async function updateWakeLock() {
     }
 }
 
+// Both modes read the same decoded copy of the episode, so it's decoded only once
+function getEpisodeSamples() {
+    if (state.samplesFile !== state.episodeFile) {
+        state.samplesFile = state.episodeFile;
+        state.samplesPromise = decodeEpisode(state.episodeFile);
+    }
+    return state.samplesPromise;
+}
+
 // -----------------------------------------------------------------------------
 // Prepared mode: timed lines from Gemini, shown as the player reaches them
 // -----------------------------------------------------------------------------
@@ -291,7 +304,7 @@ function startPrepared() {
     }
     const preparer = new SubtitlePreparer({
         apiKey: state.apiKey,
-        file: state.episodeFile,
+        loadSamples: getEpisodeSamples,
         targetLang: state.targetLang,
         getPlayhead: () => audioEl.currentTime,
         onCues: (cues) => {
@@ -395,7 +408,10 @@ function startSubtitles() {
         playAudio: false,
         silenceWhilePlaying: false,
         listeningMessage: `Subtitles on, in ${state.targetLang.name}.`,
-        startCapture: (onChunk) => startElementCapture(audioEl, onChunk),
+        startCapture: async (onChunk) => {
+            setStatus('Reading the episode…');
+            startElementCapture(audioEl, await getEpisodeSamples(), onChunk);
+        },
         onStatusChange: (status) => {
             if (status === 'connecting') setStatus('Connecting to Gemini…');
             if (status === 'connected') setStatus(`Subtitles on, in ${state.targetLang.name}. They follow the audio a few seconds behind.`);
@@ -474,11 +490,7 @@ document.addEventListener('DOMContentLoaded', () => {
         navigator.clipboard.writeText($('podcasts-path').textContent).then(() => showToast("Path copied", "success", "content_copy"));
     });
 
-    // Once the episode plays through Web Audio, the context must be started by a tap,
-    // or the player goes silent; a tap on the player's own controls is early enough
-    document.addEventListener('pointerdown', () => unlockElementPlayback(audioEl), { capture: true });
     audioEl.addEventListener('play', () => {
-        unlockElementPlayback(audioEl);
         if (state.mode === 'live' && !isSessionActive()) startSubtitles();
         if (state.mode === 'prepared') {
             if (!state.preparer) startPrepared();

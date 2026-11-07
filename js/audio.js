@@ -10,9 +10,7 @@ let micContext = null;
 let micMediaStream = null;
 let micProcessor = null;
 let micGeneration = 0;
-let elementContext = null;
-let elementSource = null;
-let elementProcessor = null;
+let elementCaptureTimer = null;
 
 // Must run inside a click handler: browsers keep audio suspended until a user gesture
 export function unlockPlayback() {
@@ -170,59 +168,27 @@ export function stopMicCapture() {
     }
 }
 
-// Audio File Capture: the <audio> element plays through this context, which also
-// streams what you hear to Gemini as 16kHz mono PCM
-// Must run inside a click handler the first time, like unlockPlayback
-export function unlockElementPlayback(audioEl) {
-    if (!elementContext) {
-        elementContext = new (window.AudioContext || window.webkitAudioContext)();
-        // An element can only be connected once, so the source lives as long as the page
-        elementSource = elementContext.createMediaElementSource(audioEl);
-        elementSource.connect(elementContext.destination);
-    }
-    if (elementContext.state !== 'running') {
-        elementContext.resume().catch(err => console.warn("Could not resume episode audio:", err));
-    }
-}
+// Audio File Capture: the <audio> element plays the file on its own (routing it through
+// Web Audio can leave it silent in Safari), and Gemini gets the same moments from a
+// decoded 16kHz mono copy, sent as the playhead moves
+const FILE_CAPTURE_INTERVAL_MS = 100;
+// A bigger jump than this means you skipped, so streaming restarts at the new spot
+const FILE_CAPTURE_SEEK_SECONDS = 1;
 
-export async function startElementCapture(audioEl, onPcmChunkCallback) {
+export async function startElementCapture(audioEl, samples, onPcmChunkCallback) {
     stopElementCapture();
-    unlockElementPlayback(audioEl);
-
-    const ratio = elementContext.sampleRate / 16000;
-    let readPos = 0;
-    elementProcessor = elementContext.createScriptProcessor(4096, 2, 1);
-    elementProcessor.onaudioprocess = (e) => {
+    let sentUpTo = Math.floor(audioEl.currentTime * 16000);
+    elementCaptureTimer = setInterval(() => {
         if (audioEl.paused) return;
-
-        // The player's volume slider scales this stream too, so undo it for Gemini
-        const volumeGain = 1 / Math.max(audioEl.volume, 0.05);
-        // Mix to mono, then average each window of samples down to 16kHz
-        const left = e.inputBuffer.getChannelData(0);
-        const right = e.inputBuffer.numberOfChannels > 1 ? e.inputBuffer.getChannelData(1) : left;
-        const out = [];
-        while (readPos + ratio <= left.length) {
-            const start = Math.floor(readPos);
-            const end = Math.floor(readPos + ratio);
-            let sum = 0;
-            for (let i = start; i < end; i++) sum += (left[i] + right[i]) / 2;
-            out.push(volumeGain * sum / Math.max(end - start, 1));
-            readPos += ratio;
-        }
-        readPos -= left.length;
-        if (readPos < 0) readPos = 0;
-        onPcmChunkCallback(encodePcm16(out));
-    };
-
-    elementSource.connect(elementProcessor);
-    // A processor only runs while connected to the output; it writes silence there
-    elementProcessor.connect(elementContext.destination);
+        const playhead = Math.min(Math.floor(audioEl.currentTime * 16000), samples.length);
+        if (Math.abs(playhead - sentUpTo) > FILE_CAPTURE_SEEK_SECONDS * 16000) sentUpTo = playhead;
+        if (playhead <= sentUpTo) return;
+        onPcmChunkCallback(encodePcm16(samples.subarray(sentUpTo, playhead)));
+        sentUpTo = playhead;
+    }, FILE_CAPTURE_INTERVAL_MS);
 }
 
 export function stopElementCapture() {
-    if (elementProcessor) {
-        elementSource.disconnect(elementProcessor);
-        elementProcessor.disconnect();
-        elementProcessor = null;
-    }
+    clearInterval(elementCaptureTimer);
+    elementCaptureTimer = null;
 }

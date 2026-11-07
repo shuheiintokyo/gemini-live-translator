@@ -41,27 +41,34 @@
                 <div class="rounded-2xl bg-surface-container-low/90 p-space-md flex flex-col gap-space-sm shadow-xl border border-white/[0.04]">
                     <span class="font-headline-sm text-body-md font-semibold">Episodes</span>
                     <div class="grid grid-cols-2 gap-space-xs">
-                        <label class="flex items-center justify-center gap-1 px-space-sm py-2 rounded-xl bg-secondary text-on-secondary font-bold text-label-md cursor-pointer text-center">
+                        <label class="flex items-center justify-center gap-1 px-space-sm py-2 rounded-xl bg-surface-container-high text-on-surface font-bold text-label-md cursor-pointer text-center">
                             <span class="material-symbols-outlined text-[18px]">folder_open</span>Podcasts folder
                             <input id="folder-input" type="file" webkitdirectory multiple class="hidden" />
                         </label>
-                        <label class="flex items-center justify-center gap-1 px-space-sm py-2 rounded-xl bg-surface-container-high text-on-surface font-bold text-label-md cursor-pointer text-center">
+                        <label class="flex items-center justify-center gap-1 px-space-sm py-2 rounded-xl bg-secondary text-on-secondary font-bold text-label-md cursor-pointer text-center">
                             <span class="material-symbols-outlined text-[18px]">audio_file</span>One file
                             <input id="file-input" type="file" accept="audio/*" class="hidden" />
                         </label>
                     </div>
-                    <details class="rounded-xl bg-surface-container-high/60 border border-white/[0.06]">
+                    <details id="podcast-help" class="rounded-xl bg-surface-container-high/60 border border-white/[0.06]" open>
                         <summary class="p-space-sm cursor-pointer font-label-sm text-label-sm text-on-surface-variant uppercase">Where are my podcasts?</summary>
                         <div class="px-space-sm pb-space-sm flex flex-col gap-space-xs text-body-sm text-on-surface-variant leading-snug">
-                            <p>This page can't sign in to Apple Podcasts or reach your iPhone. On a Mac, the Podcasts app keeps episodes as audio files in a hidden folder:</p>
-                            <code id="podcasts-path" class="p-2 rounded-lg bg-surface-container-lowest text-[11px] text-on-surface break-all">~/Library/Group Containers/243LU875E5.groups.com.apple.podcasts/Library/Cache</code>
-                            <button id="copy-path-btn" class="self-start text-secondary font-bold text-label-md cursor-pointer" type="button">Copy this path</button>
+                            <p>This page can't sign in to Apple Podcasts or reach your iPhone, but on a Mac it can open episodes you've downloaded in the Podcasts app.</p>
                             <ol class="list-decimal pl-5 flex flex-col gap-1">
                                 <li>Download the episode in the Podcasts app on this Mac.</li>
-                                <li>Click <strong class="text-on-surface">Podcasts folder</strong>, press <strong class="text-on-surface">Cmd+Shift+G</strong>, paste the path and choose that folder.</li>
-                                <li>Pick an episode from the list below.</li>
+                                <li>Click <strong class="text-on-surface">One file</strong>.</li>
+                                <li>In the window's sidebar, under <strong class="text-on-surface">Media</strong>, click <strong class="text-on-surface">Music</strong>, then open <strong class="text-on-surface">Podcasts</strong> and the show.</li>
+                                <li>Choose the episode and click <strong class="text-on-surface">Upload</strong> or <strong class="text-on-surface">Open</strong>. The file stays on your Mac: only the audio goes to Gemini for subtitles.</li>
                             </ol>
-                            <p>Apple can change this folder. Episodes from paid subscriptions may not play.</p>
+                            <p>Episodes from paid subscriptions may not play.</p>
+                            <details class="pt-1">
+                                <summary class="cursor-pointer text-label-md text-secondary">List all downloaded episodes at once</summary>
+                                <div class="flex flex-col gap-space-xs pt-space-xs">
+                                    <p>Click <strong class="text-on-surface">Podcasts folder</strong>, press <strong class="text-on-surface">Cmd+Shift+G</strong>, paste this path and choose that folder. Many episodes there have no title, so they show by date.</p>
+                                    <code id="podcasts-path" class="p-2 rounded-lg bg-surface-container-lowest text-[11px] text-on-surface break-all">~/Library/Group Containers/243LU875E5.groups.com.apple.podcasts/Library/Cache</code>
+                                    <button id="copy-path-btn" class="self-start text-secondary font-bold text-label-md cursor-pointer" type="button">Copy this path</button>
+                                </div>
+                            </details>
                         </div>
                     </details>
                     <p id="episode-empty" class="text-body-sm text-on-surface-variant">No episodes loaded yet.</p>

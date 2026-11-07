@@ -13,7 +13,7 @@ const IDLE_CHECK_MS = 1000;
 const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Decodes the whole file once, straight to 16kHz mono, which is all Gemini needs
-async function decodeEpisode(file) {
+export async function decodeEpisode(file) {
     const OfflineContext = window.OfflineAudioContext || window.webkitOfflineAudioContext;
     const decoded = await new OfflineContext(1, 1, SAMPLE_RATE).decodeAudioData(await file.arrayBuffer());
     const mono = new Float32Array(decoded.length);
@@ -125,8 +125,9 @@ async function requestSegments(apiKey, wavBase64, durationSeconds, targetLang, u
 }
 
 export class SubtitlePreparer {
-    constructor({ apiKey, file, targetLang, getPlayhead, onCues, onLanguage, onStatus, onError }) {
-        Object.assign(this, { apiKey, file, targetLang, getPlayhead, onCues, onLanguage, onStatus, onError });
+    // loadSamples returns the decoded episode, shared with Live mode so it's decoded once
+    constructor({ apiKey, loadSamples, targetLang, getPlayhead, onCues, onLanguage, onStatus, onError }) {
+        Object.assign(this, { apiKey, loadSamples, targetLang, getPlayhead, onCues, onLanguage, onStatus, onError });
         this.samples = null;
         this.ranges = [];
         this.stopped = false;
@@ -162,7 +163,7 @@ export class SubtitlePreparer {
     async run() {
         try {
             this.onStatus('Reading the episode…');
-            this.samples = await decodeEpisode(this.file);
+            this.samples = await this.loadSamples();
         } catch (err) {
             console.error("Could not decode the episode:", err);
             if (!this.stopped) this.onError("This episode couldn't be read for prepared subtitles. Switch to Live mode instead.");
