@@ -1,7 +1,7 @@
 // Prepared Subtitles: reads ahead of the player, sends each stretch of the episode to
 // Gemini and gets back timed sentence pairs, so each line can appear as it is spoken
-// If a key can't use the newest Flash model this way, the previous one is tried instead
-const MODELS = ['gemini-3.8-flash', 'gemini-3.6-flash'];
+// Best first. When one model isn't available or its free quota runs out, the next is used
+const MODELS = ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash-lite'];
 const API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 const SAMPLE_RATE = 16000;
 // Stretches are cut at the quietest moment in this range, so sentences rarely split
@@ -10,8 +10,6 @@ const CHUNK_SECONDS = { min: 24, max: 36 };
 const FIRST_CHUNK_SECONDS = { min: 8, max: 14 };
 // A request that takes longer than this is treated as lost and sent again
 const REQUEST_TIMEOUT_MS = 90000;
-// How far ahead of the player to prepare; less wastes fewer requests if you skip around
-const LOOKAHEAD_SECONDS = 180;
 const RETRY_DELAYS_MS = [3000, 10000, 30000];
 const IDLE_CHECK_MS = 1000;
 
@@ -154,6 +152,24 @@ export class SubtitlePreparer {
         this.useThinkingLevel = true;
         this.modelIndex = 0;
         this.lastError = '';
+        this.duration = 0;
+    }
+
+    get model() {
+        return MODELS[this.modelIndex];
+    }
+
+    // Seconds prepared without a break from this time on (the whole rest at the very end)
+    bufferedAhead(seconds) {
+        if (!this.duration) return 0;
+        const end = this.nextStart(seconds);
+        return end >= this.duration - 0.5 ? Infinity : end - seconds;
+    }
+
+    preparedFraction() {
+        if (!this.duration) return 0;
+        const total = this.ranges.reduce((sum, [start, end]) => sum + (end - start), 0);
+        return Math.min(total / this.duration, 1);
     }
 
     // True once the part of the episode at this time has been prepared
@@ -192,11 +208,15 @@ export class SubtitlePreparer {
             return;
         }
         const duration = this.samples.length / SAMPLE_RATE;
+        this.duration = duration;
 
+        // Prepares the whole episode: onward from where you're listening first, then
+        // any part skipped over earlier
         while (!this.stopped) {
-            const playhead = this.getPlayhead();
-            const start = this.nextStart(playhead);
-            if (start >= duration - 0.5 || start >= playhead + LOOKAHEAD_SECONDS) {
+            let start = this.nextStart(this.getPlayhead());
+            if (start >= duration - 0.5) start = this.nextStart(0);
+            if (start >= duration - 0.5) {
+                this.onStatus('All subtitles are ready.');
                 await wait(IDLE_CHECK_MS);
                 continue;
             }
@@ -205,7 +225,7 @@ export class SubtitlePreparer {
             const continuesPrepared = this.ranges.some(([, rangeEnd]) => Math.abs(rangeEnd - start) < 0.01);
             const endSample = findQuietCut(this.samples, startSample, continuesPrepared ? CHUNK_SECONDS : FIRST_CHUNK_SECONDS);
             const end = endSample / SAMPLE_RATE;
-            this.onStatus(`Preparing subtitles: ${Math.round((start / duration) * 100)}% of the episode…`);
+            this.onStatus(`Preparing subtitles with ${this.model}: ${Math.round(this.preparedFraction() * 100)}% ready…`);
 
             const result = await this.requestWithRetries(this.samples.subarray(startSample, endSample), end - start);
             if (this.stopped) return;
@@ -223,7 +243,6 @@ export class SubtitlePreparer {
             }));
             this.ranges.push([start, end]);
             this.onCues(cues);
-            this.onStatus('Subtitles ready for this part.');
         }
     }
 
@@ -251,13 +270,17 @@ export class SubtitlePreparer {
                     this.useThinkingLevel = false;
                     continue;
                 }
-                // Model not available for this key, or with no free quota at all ("limit: 0"):
-                // try the next one
-                const noFreeQuota = err.status === 429 && /limit:\s*0\b/.test(err.detail || '');
-                if ((err.status === 404 || noFreeQuota) && this.modelIndex < MODELS.length - 1) {
+                // Model not available for this key, no free quota at all ("limit: 0") or the
+                // day's free quota used up: move down to the next model
+                const quotaGone = err.status === 429 && /limit:\s*0\b|per ?day|PerDay|daily/i.test(err.detail || '');
+                const stillLimited = err.status === 429 && retries === RETRY_DELAYS_MS.length;
+                if ((err.status === 404 || quotaGone || stillLimited) && this.modelIndex < MODELS.length - 1) {
                     this.modelIndex++;
                     this.useThinkingLevel = true;
-                    this.onStatus(`${model} isn't available here. Trying ${MODELS[this.modelIndex]}…`);
+                    retries = 0;
+                    this.onStatus(err.status === 404
+                        ? `${model} isn't available here. Switching to ${this.model}…`
+                        : `${model}'s free limit is used up. Switching to ${this.model}…`);
                     continue;
                 }
                 // Wrong key, bad request or not allowed: retrying won't help

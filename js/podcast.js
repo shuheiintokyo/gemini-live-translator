@@ -10,6 +10,9 @@ const AUDIO_FILE = /\.(mp3|m4a|aac|wav|ogg|opus|flac)$/i;
 const MAX_TAG_BYTES = 8 * 1048576;
 // A prepared line stays up this long after its end time, unless the next one starts
 const CUE_HOLD_SECONDS = 1.2;
+// Playback waits until this much is prepared ahead, and pauses again if it gets this close
+const START_BUFFER_SECONDS = 8;
+const STALL_BUFFER_SECONDS = 1.5;
 // Long sentences are cut into subtitle-sized lines, about two TV lines each
 // (TV styles use roughly 42 Latin characters per line, fewer for Chinese or Japanese)
 const MAX_LINE_LENGTH = { spaced: 84, unspaced: 32 };
@@ -32,6 +35,8 @@ const state = {
     preparer: null,
     cues: [],
     shownCue: -1,
+    // Playback is held, like video buffering, until subtitles catch up
+    isBuffering: false,
     bufferStart: { original: 0, translation: 0 }
 };
 
@@ -249,7 +254,8 @@ function applyDetectedLanguage(code) {
     const name = match ? match.name : code;
     if (state.detectedLang === name) return;
     state.detectedLang = name;
-    setStatus(`Speech detected: ${name}. Subtitles in ${state.targetLang.name}.`);
+    if (state.mode === 'prepared') showPreparedStatus();
+    else setStatus(`Speech detected: ${name}. Subtitles in ${state.targetLang.name}.`);
 }
 
 function clearTranscript() {
@@ -312,9 +318,14 @@ function startPrepared() {
             state.cues = [...state.cues, ...cues.filter(c => c.original || c.translation)].sort((a, b) => a.start - b.start);
             renderPreparedTranscript();
             renderPreparedAt(audioEl.currentTime, true);
+            resumeIfBuffered();
         },
         onLanguage: (code) => { if (state.preparer === preparer) applyDetectedLanguage(code); },
-        onStatus: (text) => { if (state.preparer === preparer && !state.detectedLang) setStatus(text); },
+        onStatus: (text) => {
+            if (state.preparer !== preparer) return;
+            state.preparerStatus = text;
+            showPreparedStatus();
+        },
         onError: (text) => {
             if (state.preparer !== preparer) return;
             setStatus(text);
@@ -328,6 +339,32 @@ function startPrepared() {
 function stopPrepared() {
     state.preparer?.stop();
     state.preparer = null;
+    state.isBuffering = false;
+    state.preparerStatus = '';
+}
+
+function showPreparedStatus() {
+    const speech = state.detectedLang ? `Speech: ${state.detectedLang}. ` : '';
+    const waiting = state.isBuffering ? 'Playback starts as soon as the next subtitles are ready. ' : '';
+    setStatus(`${speech}${waiting}${state.preparerStatus || ''}`.trim());
+}
+
+// The audio only plays once the lines for it are ready, so subtitles never lag behind
+function hasBufferAhead(margin) {
+    return state.preparer && state.preparer.bufferedAhead(audioEl.currentTime) >= margin;
+}
+
+function holdForSubtitles() {
+    state.isBuffering = true;
+    audioEl.pause();
+    showPreparedStatus();
+}
+
+function resumeIfBuffered() {
+    if (!state.isBuffering || !hasBufferAhead(START_BUFFER_SECONDS)) return;
+    state.isBuffering = false;
+    showPreparedStatus();
+    audioEl.play().catch(() => setStatus('Subtitles are ready. Press play to continue.'));
 }
 
 function cueIndexAt(seconds) {
@@ -385,9 +422,13 @@ function renderPreparedTranscript() {
 
 // Checks the playhead every frame while playing, so a line appears the moment it starts
 function followPlayhead() {
-    if (state.mode !== 'prepared') return;
+    if (state.mode !== 'prepared' || audioEl.paused) return;
+    if (!hasBufferAhead(STALL_BUFFER_SECONDS)) {
+        holdForSubtitles();
+        return;
+    }
     renderPreparedAt(audioEl.currentTime);
-    if (!audioEl.paused) requestAnimationFrame(followPlayhead);
+    requestAnimationFrame(followPlayhead);
 }
 
 // -----------------------------------------------------------------------------
@@ -494,10 +535,20 @@ document.addEventListener('DOMContentLoaded', () => {
         if (state.mode === 'live' && !isSessionActive()) startSubtitles();
         if (state.mode === 'prepared') {
             if (!state.preparer) startPrepared();
-            followPlayhead();
+            if (hasBufferAhead(START_BUFFER_SECONDS)) {
+                state.isBuffering = false;
+                showPreparedStatus();
+                followPlayhead();
+            } else {
+                holdForSubtitles();
+            }
         }
     });
-    audioEl.addEventListener('seeked', () => { if (state.mode === 'prepared') renderPreparedAt(audioEl.currentTime, true); });
+    audioEl.addEventListener('seeked', () => {
+        if (state.mode !== 'prepared') return;
+        renderPreparedAt(audioEl.currentTime, true);
+        resumeIfBuffered();
+    });
     audioEl.addEventListener('ended', () => { if (state.mode === 'live') stopSubtitles(); });
     ['play', 'pause', 'ended'].forEach(type => audioEl.addEventListener(type, updateWakeLock));
     document.addEventListener('visibilitychange', updateWakeLock);
