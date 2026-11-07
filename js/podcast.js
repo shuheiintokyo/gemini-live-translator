@@ -7,8 +7,9 @@ import { connectGeminiLive, disconnectGeminiLive, isSessionActive } from './webs
 const SUBTITLE_MODEL = LIVE_MODELS.find(m => m.isTranslateModel);
 const AUDIO_FILE = /\.(mp3|m4a|aac|wav|ogg|opus|flac)$/i;
 const MAX_TAG_BYTES = 8 * 1048576;
-// Lines with no sentence ending are cut here so a subtitle never grows forever
-const MAX_LINE_LENGTH = { spaced: 160, unspaced: 70 };
+// Long sentences are cut into subtitle-sized lines, about two TV lines each
+// (TV styles use roughly 42 Latin characters per line, fewer for Chinese or Japanese)
+const MAX_LINE_LENGTH = { spaced: 84, unspaced: 32 };
 
 const state = {
     apiKey: localStorage.getItem('gemini_api_key') || '',
@@ -19,6 +20,7 @@ const state = {
     episodeName: '',
     lines: [],
     buffers: { original: '', translation: '' },
+    focus: localStorage.getItem('gemini_podcast_focus') === 'original' ? 'original' : 'translation',
     bufferStart: { original: 0, translation: 0 }
 };
 
@@ -155,8 +157,12 @@ function takeSentences(text) {
     }
     const isSpaced = /\s/.test(rest.trim());
     const limit = isSpaced ? MAX_LINE_LENGTH.spaced : MAX_LINE_LENGTH.unspaced;
-    if (rest.trim().length > limit) {
-        const cut = isSpaced ? rest.lastIndexOf(' ', limit) : limit;
+    while (rest.trim().length > limit) {
+        // Prefer a comma as the break, then a space, so lines split where people pause
+        const head = rest.slice(0, limit);
+        const comma = Math.max(head.lastIndexOf(','), head.lastIndexOf('，'), head.lastIndexOf('、'));
+        const space = head.lastIndexOf(' ');
+        const cut = comma > limit / 3 ? comma + 1 : (isSpaced && space > 0 ? space : limit);
         done.push(rest.slice(0, cut).trim());
         rest = rest.slice(cut);
     }
@@ -187,15 +193,35 @@ function onSubtitleText(kind, text) {
     if (done.length) state.bufferStart[kind] = audioEl.currentTime;
     state.buffers[kind] = rest;
 
-    // The subtitle shows the sentence being spoken, or the last one finished
-    const shown = rest.trim() || done.at(-1);
-    if (shown) $(kind === 'original' ? 'sub-original' : 'sub-translation').textContent = shown;
+    // Roll-up: a finished line moves up and fades while the next one grows below it
+    const id = kind === 'original' ? 'sub-original' : 'sub-translation';
+    if (done.length) $(`${id}-prev`).textContent = done.at(-1);
+    $(id).textContent = rest.trim();
+}
+
+function applyFocus() {
+    localStorage.setItem('gemini_podcast_focus', state.focus);
+    $('sub-original-block').classList.toggle('is-focus', state.focus === 'original');
+    $('sub-translation-block').classList.toggle('is-focus', state.focus === 'translation');
+    document.querySelectorAll('.btn-focus-pill').forEach(btn => {
+        const isSelected = btn.getAttribute('data-focus') === state.focus;
+        btn.setAttribute('aria-checked', String(isSelected));
+        btn.setAttribute('role', 'radio');
+        btn.className = `btn-focus-pill px-3 py-1 rounded-lg text-label-sm transition-all cursor-pointer ${isSelected
+            ? 'bg-primary-container text-on-primary-container font-bold'
+            : 'text-on-surface-variant hover:text-on-surface'}`;
+    });
 }
 
 function flushSubtitleBuffers() {
     ['original', 'translation'].forEach(kind => {
         const text = state.buffers[kind].trim();
-        if (text) addLine(kind, text, state.bufferStart[kind]);
+        const id = kind === 'original' ? 'sub-original' : 'sub-translation';
+        if (text) {
+            addLine(kind, text, state.bufferStart[kind]);
+            $(`${id}-prev`).textContent = text;
+            $(id).textContent = '';
+        }
         state.buffers[kind] = '';
     });
 }
@@ -215,8 +241,26 @@ function clearTranscript() {
     state.detectedLang = null;
     $('transcript-rows').innerHTML = '';
     $('transcript-empty').classList.remove('hidden');
-    $('sub-original').textContent = '';
-    $('sub-translation').textContent = '';
+    ['sub-original', 'sub-original-prev', 'sub-translation', 'sub-translation-prev'].forEach(id => { $(id).textContent = ''; });
+}
+
+// Keeps the screen on while subtitles run, since a sleeping phone stops the audio.
+// Older browsers have no Wake Lock, so this is best effort
+let wakeLock = null;
+
+async function updateWakeLock() {
+    const wanted = !audioEl.paused && document.visibilityState === 'visible';
+    if (wanted && !wakeLock && 'wakeLock' in navigator) {
+        try {
+            wakeLock = await navigator.wakeLock.request('screen');
+            wakeLock.addEventListener('release', () => { wakeLock = null; });
+        } catch (err) {
+            console.warn("Could not keep the screen on:", err.name);
+        }
+    } else if (!wanted && wakeLock) {
+        wakeLock.release();
+        wakeLock = null;
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -316,6 +360,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!isSessionActive()) startSubtitles();
     });
     audioEl.addEventListener('ended', stopSubtitles);
+    ['play', 'pause', 'ended'].forEach(type => audioEl.addEventListener(type, updateWakeLock));
+    document.addEventListener('visibilitychange', updateWakeLock);
+
+    document.querySelectorAll('.btn-focus-pill').forEach(btn => {
+        btn.addEventListener('click', () => {
+            state.focus = btn.getAttribute('data-focus');
+            applyFocus();
+        });
+    });
+    applyFocus();
 
     $('btn-copy-log').addEventListener('click', copyTranscript);
     $('btn-export-md').addEventListener('click', downloadTranscript);

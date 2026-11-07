@@ -76,3 +76,28 @@ dialog::backdrop {
     border-color: #a078ff;
     background: rgba(160, 120, 255, 0.12);
 }
+
+/* Podcast subtitles: the focus language is large and yellow, the other smaller */
+.sub-block .sub-prev {
+    opacity: 0.45;
+    transition: opacity 0.3s;
+}
+
+.sub-block .sub-current,
+.sub-block .sub-prev {
+    font-size: 15px;
+    line-height: 1.35;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.sub-block.is-focus .sub-current,
+.sub-block.is-focus .sub-prev {
+    font-size: 22px;
+    font-weight: 700;
+    color: #ffe680;
+}
+
+@media (min-width: 640px) {
+    .sub-block .sub-current, .sub-block .sub-prev { font-size: 17px; }
+    .sub-block.is-focus .sub-current, .sub-block.is-focus .sub-prev { font-size: 26px; }
+}

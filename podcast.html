@@ -84,10 +84,24 @@
                     </div>
                     <audio id="episode-audio" controls preload="metadata" class="w-full"></audio>
 
-                    <!-- Subtitles, like on TV -->
-                    <div class="rounded-2xl bg-black px-space-md py-space-lg min-h-[9rem] flex flex-col items-center justify-end gap-2 text-center">
-                        <p id="sub-original" class="text-[15px] sm:text-[17px] leading-snug text-white/70"></p>
-                        <p id="sub-translation" class="text-[19px] sm:text-[24px] leading-snug font-bold text-[#ffe680]"></p>
+                    <div class="flex items-center justify-between gap-space-sm">
+                        <span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Large text</span>
+                        <div class="grid grid-cols-2 gap-1 p-1 rounded-xl bg-surface-container-lowest" role="radiogroup" aria-label="Which language is shown large">
+                            <button class="btn-focus-pill" type="button" data-focus="original">Original</button>
+                            <button class="btn-focus-pill" type="button" data-focus="translation">Translation</button>
+                        </div>
+                    </div>
+
+                    <!-- Subtitles, like on TV: the finished line rolls up while the next one grows -->
+                    <div class="rounded-2xl bg-black px-space-md py-space-lg min-h-[11rem] flex flex-col items-center justify-end gap-space-sm text-center">
+                        <div id="sub-original-block" class="sub-block flex flex-col gap-0.5">
+                            <p id="sub-original-prev" class="sub-prev"></p>
+                            <p id="sub-original" class="sub-current"></p>
+                        </div>
+                        <div id="sub-translation-block" class="sub-block flex flex-col gap-0.5">
+                            <p id="sub-translation-prev" class="sub-prev"></p>
+                            <p id="sub-translation" class="sub-current"></p>
+                        </div>
                     </div>
                     <p id="sub-status" class="text-label-sm text-on-surface-variant">Press play to start subtitles. They follow the audio a few seconds behind.</p>
                 </div>
