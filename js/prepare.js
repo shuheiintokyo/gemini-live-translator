@@ -6,6 +6,10 @@ const API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 const SAMPLE_RATE = 16000;
 // Stretches are cut at the quietest moment in this range, so sentences rarely split
 const CHUNK_SECONDS = { min: 24, max: 36 };
+// Where nothing is ready yet (the start, or after a jump), a short stretch comes back sooner
+const FIRST_CHUNK_SECONDS = { min: 8, max: 14 };
+// A request that takes longer than this is treated as lost and sent again
+const REQUEST_TIMEOUT_MS = 90000;
 // How far ahead of the player to prepare; less wastes fewer requests if you skip around
 const LOOKAHEAD_SECONDS = 180;
 const RETRY_DELAYS_MS = [3000, 10000, 30000];
@@ -25,11 +29,11 @@ export async function decodeEpisode(file) {
     return mono;
 }
 
-function findQuietCut(samples, start) {
-    const maxEnd = start + CHUNK_SECONDS.max * SAMPLE_RATE;
+function findQuietCut(samples, start, limits) {
+    const maxEnd = start + limits.max * SAMPLE_RATE;
     if (maxEnd >= samples.length) return samples.length;
     const windowSize = SAMPLE_RATE / 10;
-    let best = start + CHUNK_SECONDS.min * SAMPLE_RATE;
+    let best = start + limits.min * SAMPLE_RATE;
     let bestEnergy = Infinity;
     for (let s = best; s + windowSize <= maxEnd; s += windowSize) {
         let energy = 0;
@@ -111,6 +115,7 @@ async function requestSegments(apiKey, model, wavBase64, durationSeconds, target
     const response = await fetch(`${API_BASE}/${model}:generateContent?key=${encodeURIComponent(apiKey)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
         body: JSON.stringify({
             contents: [{
                 role: 'user',
@@ -197,7 +202,8 @@ export class SubtitlePreparer {
             }
 
             const startSample = Math.floor(start * SAMPLE_RATE);
-            const endSample = findQuietCut(this.samples, startSample);
+            const continuesPrepared = this.ranges.some(([, rangeEnd]) => Math.abs(rangeEnd - start) < 0.01);
+            const endSample = findQuietCut(this.samples, startSample, continuesPrepared ? CHUNK_SECONDS : FIRST_CHUNK_SECONDS);
             const end = endSample / SAMPLE_RATE;
             this.onStatus(`Preparing subtitles: ${Math.round((start / duration) * 100)}% of the episode…`);
 
@@ -226,9 +232,18 @@ export class SubtitlePreparer {
         let retries = 0;
         while (!this.stopped) {
             const model = MODELS[this.modelIndex];
+            // Shows that something is happening while Gemini works on a stretch
+            const startedAt = Date.now();
+            const ticker = setInterval(() => {
+                if (!this.stopped) this.onStatus(`Waiting for Gemini (${Math.round((Date.now() - startedAt) / 1000)} s)…`);
+            }, 1000);
             try {
                 return await requestSegments(this.apiKey, model, wav, durationSeconds, this.targetLang, this.useThinkingLevel);
-            } catch (err) {
+            } catch (rawErr) {
+                clearInterval(ticker);
+                const err = rawErr.name === 'TimeoutError'
+                    ? Object.assign(new Error(`Gemini didn't answer within ${REQUEST_TIMEOUT_MS / 1000} seconds`), { status: 0 })
+                    : rawErr;
                 this.lastError = err.message;
                 console.warn("Prepared subtitles request failed:", model, err.message, err.detail?.slice(0, 500));
                 // Some models don't take the thinking setting, so drop it once and resend
@@ -255,6 +270,8 @@ export class SubtitlePreparer {
                     : err.message;
                 this.onStatus(`${reason}. Retrying in ${delay / 1000} seconds…`);
                 await wait(delay);
+            } finally {
+                clearInterval(ticker);
             }
         }
         return null;
