@@ -10,6 +10,9 @@ let micContext = null;
 let micMediaStream = null;
 let micProcessor = null;
 let micGeneration = 0;
+let elementContext = null;
+let elementSource = null;
+let elementProcessor = null;
 
 // Must run inside a click handler: browsers keep audio suspended until a user gesture
 export function unlockPlayback() {
@@ -94,6 +97,20 @@ export function isPlaybackBusy() {
     return nextPlayTime > 0 && nextPlayTime + ECHO_TAIL_SECONDS > playbackContext.currentTime;
 }
 
+// 16-bit PCM, base64 encoded, as the Live API expects
+function encodePcm16(samples) {
+    const pcm16 = new Int16Array(samples.length);
+    for (let i = 0; i < samples.length; i++) {
+        pcm16[i] = Math.max(-1, Math.min(1, samples[i])) * 0x7FFF;
+    }
+    let binary = '';
+    const bytes = new Uint8Array(pcm16.buffer);
+    for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+}
+
 // Microphone Capture: 16kHz Mono PCM Audio Stream
 export async function startMicCapture(onPcmChunkCallback, options = {}) {
     stopMicCapture();
@@ -125,21 +142,11 @@ export async function startMicCapture(onPcmChunkCallback, options = {}) {
     micProcessor = micContext.createScriptProcessor(2048, 1, 1);
 
     micProcessor.onaudioprocess = (e) => {
-        const inputData = e.inputBuffer.getChannelData(0);
-        const pcm16 = new Int16Array(inputData.length);
         // Silenced audio still goes out as zeros, so Gemini keeps hearing a live stream
-        if (!options.isSilenced?.()) {
-            for (let i = 0; i < inputData.length; i++) {
-                pcm16[i] = Math.max(-1, Math.min(1, inputData[i])) * 0x7FFF;
-            }
-        }
-
-        let binary = '';
-        const bytes = new Uint8Array(pcm16.buffer);
-        for (let i = 0; i < bytes.byteLength; i++) {
-            binary += String.fromCharCode(bytes[i]);
-        }
-        onPcmChunkCallback(btoa(binary));
+        const inputData = options.isSilenced?.()
+            ? new Float32Array(e.inputBuffer.length)
+            : e.inputBuffer.getChannelData(0);
+        onPcmChunkCallback(encodePcm16(inputData));
     };
 
     source.connect(micProcessor);
@@ -160,5 +167,62 @@ export function stopMicCapture() {
     if (micMediaStream) {
         micMediaStream.getTracks().forEach(t => t.stop());
         micMediaStream = null;
+    }
+}
+
+// Audio File Capture: the <audio> element plays through this context, which also
+// streams what you hear to Gemini as 16kHz mono PCM
+// Must run inside a click handler the first time, like unlockPlayback
+export function unlockElementPlayback(audioEl) {
+    if (!elementContext) {
+        elementContext = new (window.AudioContext || window.webkitAudioContext)();
+        // An element can only be connected once, so the source lives as long as the page
+        elementSource = elementContext.createMediaElementSource(audioEl);
+        elementSource.connect(elementContext.destination);
+    }
+    if (elementContext.state !== 'running') {
+        elementContext.resume().catch(err => console.warn("Could not resume episode audio:", err));
+    }
+}
+
+export async function startElementCapture(audioEl, onPcmChunkCallback) {
+    stopElementCapture();
+    unlockElementPlayback(audioEl);
+
+    const ratio = elementContext.sampleRate / 16000;
+    let readPos = 0;
+    elementProcessor = elementContext.createScriptProcessor(4096, 2, 1);
+    elementProcessor.onaudioprocess = (e) => {
+        if (audioEl.paused) return;
+
+        // The player's volume slider scales this stream too, so undo it for Gemini
+        const volumeGain = 1 / Math.max(audioEl.volume, 0.05);
+        // Mix to mono, then average each window of samples down to 16kHz
+        const left = e.inputBuffer.getChannelData(0);
+        const right = e.inputBuffer.numberOfChannels > 1 ? e.inputBuffer.getChannelData(1) : left;
+        const out = [];
+        while (readPos + ratio <= left.length) {
+            const start = Math.floor(readPos);
+            const end = Math.floor(readPos + ratio);
+            let sum = 0;
+            for (let i = start; i < end; i++) sum += (left[i] + right[i]) / 2;
+            out.push(volumeGain * sum / Math.max(end - start, 1));
+            readPos += ratio;
+        }
+        readPos -= left.length;
+        if (readPos < 0) readPos = 0;
+        onPcmChunkCallback(encodePcm16(out));
+    };
+
+    elementSource.connect(elementProcessor);
+    // A processor only runs while connected to the output; it writes silence there
+    elementProcessor.connect(elementContext.destination);
+}
+
+export function stopElementCapture() {
+    if (elementProcessor) {
+        elementSource.disconnect(elementProcessor);
+        elementProcessor.disconnect();
+        elementProcessor = null;
     }
 }

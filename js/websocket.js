@@ -1,6 +1,6 @@
 // Gemini Live Multimodal WebSocket Client
 import { buildSystemInstruction, getLiveModel, getTranslationLanguageCode } from './config.js';
-import { flushPlayback, getPlaybackState, isPlaybackBusy, playPcmChunk, startMicCapture, stopMicCapture } from './audio.js';
+import { flushPlayback, getPlaybackState, isPlaybackBusy, playPcmChunk, startMicCapture, stopElementCapture, stopMicCapture } from './audio.js';
 
 const ENDPOINT = 'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent';
 
@@ -94,6 +94,8 @@ export function connectGeminiLive(options) {
         onOutputText,
         onTurnEnd,
         showToast,
+        // Audio source: the microphone unless a page passes another, like an episode file
+        startCapture = startMicCapture,
         reconnectAttempt = 0,
         isReconnect = false
     } = options;
@@ -135,7 +137,7 @@ export function connectGeminiLive(options) {
         if (data.setupComplete) {
             isSetupComplete = true;
             try {
-                await startMicCapture((base64Audio) => {
+                await startCapture((base64Audio) => {
                     if (socket.readyState === WebSocket.OPEN) {
                         socket.send(JSON.stringify({
                             realtimeInput: {
@@ -212,6 +214,7 @@ export function connectGeminiLive(options) {
         if (ws !== socket) return;
         ws = null;
         stopMicCapture();
+        stopElementCapture();
         flushPlayback();
 
         // A working session that drops without an error reason (weak signal, the server's
@@ -242,6 +245,7 @@ export function disconnectGeminiLive() {
     clearTimeout(reconnectTimer);
     reconnectTimer = null;
     stopMicCapture();
+    stopElementCapture();
     flushPlayback();
     if (ws) {
         const socket = ws;
