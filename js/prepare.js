@@ -11,6 +11,8 @@ const FIRST_CHUNK_SECONDS = { min: 8, max: 14 };
 // A request that takes longer than this is treated as lost and sent again
 const REQUEST_TIMEOUT_MS = 90000;
 const RETRY_DELAYS_MS = [3000, 10000, 30000];
+// A model that's overloaded ("high demand") is skipped for this long, then tried again
+const OVERLOAD_COOLDOWN_MS = 2 * 60 * 1000;
 const IDLE_CHECK_MS = 1000;
 
 const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -150,13 +152,19 @@ export class SubtitlePreparer {
         this.ranges = [];
         this.stopped = false;
         this.useThinkingLevel = true;
-        this.modelIndex = 0;
+        // Models that can't be used for this episode (missing, or free quota used up)
+        this.unusable = new Set();
+        // Models that were overloaded, and when they may be tried again
+        this.coolingUntil = new Map();
         this.lastError = '';
         this.duration = 0;
     }
 
+    // The best model that isn't ruled out or cooling down; if all usable ones are cooling,
+    // the best usable one, since waiting is the only option left
     get model() {
-        return MODELS[this.modelIndex];
+        const usable = MODELS.filter(m => !this.unusable.has(m));
+        return usable.find(m => (this.coolingUntil.get(m) || 0) <= Date.now()) || usable[0] || null;
     }
 
     // Seconds prepared without a break from this time on (the whole rest at the very end)
@@ -250,47 +258,64 @@ export class SubtitlePreparer {
         const wav = encodeWavBase64(samples);
         let retries = 0;
         while (!this.stopped) {
-            const model = MODELS[this.modelIndex];
+            const model = this.model;
+            if (!model) return null;
             // Shows that something is happening while Gemini works on a stretch
             const startedAt = Date.now();
             const ticker = setInterval(() => {
-                if (!this.stopped) this.onStatus(`Waiting for Gemini (${Math.round((Date.now() - startedAt) / 1000)} s)…`);
+                if (!this.stopped) this.onStatus(`Waiting for ${model} (${Math.round((Date.now() - startedAt) / 1000)} s)…`);
             }, 1000);
             try {
                 return await requestSegments(this.apiKey, model, wav, durationSeconds, this.targetLang, this.useThinkingLevel);
             } catch (rawErr) {
                 clearInterval(ticker);
                 const err = rawErr.name === 'TimeoutError'
-                    ? Object.assign(new Error(`Gemini didn't answer within ${REQUEST_TIMEOUT_MS / 1000} seconds`), { status: 0 })
+                    ? Object.assign(new Error(`${model} didn't answer within ${REQUEST_TIMEOUT_MS / 1000} seconds`), { status: 0 })
                     : rawErr;
-                this.lastError = err.message;
+                this.lastError = err.message.replace(/\.+$/, '');
                 console.warn("Prepared subtitles request failed:", model, err.message, err.detail?.slice(0, 500));
+
                 // Some models don't take the thinking setting, so drop it once and resend
                 if (err.status === 400 && this.useThinkingLevel && /thinking/i.test(err.detail || '')) {
                     this.useThinkingLevel = false;
                     continue;
                 }
-                // Model not available for this key, no free quota at all ("limit: 0") or the
-                // day's free quota used up: move down to the next model
+
+                // Missing model, no free quota at all ("limit: 0"), the day's free quota used
+                // up, or still refused after every retry: don't use this model again
                 const quotaGone = err.status === 429 && /limit:\s*0\b|per ?day|PerDay|daily/i.test(err.detail || '');
                 const stillLimited = err.status === 429 && retries === RETRY_DELAYS_MS.length;
-                if ((err.status === 404 || quotaGone || stillLimited) && this.modelIndex < MODELS.length - 1) {
-                    this.modelIndex++;
-                    this.useThinkingLevel = true;
+                if (err.status === 404 || quotaGone || stillLimited) {
+                    this.unusable.add(model);
                     retries = 0;
+                    if (!this.model) return null;
                     this.onStatus(err.status === 404
                         ? `${model} isn't available here. Switching to ${this.model}…`
                         : `${model}'s free limit is used up. Switching to ${this.model}…`);
                     continue;
                 }
+
                 // Wrong key, bad request or not allowed: retrying won't help
-                if ([400, 401, 403, 404].includes(err.status)) return null;
+                if ([400, 401, 403].includes(err.status)) return null;
+
+                // Overloaded, a server error or no answer: rest this model and use another
+                // straight away, coming back to it after the cool-down
+                const isOverloaded = err.status === 0 || err.status >= 500;
+                if (isOverloaded) {
+                    this.coolingUntil.set(model, Date.now() + OVERLOAD_COOLDOWN_MS);
+                    const next = this.model;
+                    if (next && next !== model) {
+                        this.onStatus(`${model} is busy at Google. Using ${next} for now…`);
+                        continue;
+                    }
+                }
+
                 if (retries === RETRY_DELAYS_MS.length) return null;
                 const delay = RETRY_DELAYS_MS[retries++];
-                const googleReason = describeGoogleError(err.detail || '');
+                const googleReason = describeGoogleError(err.detail || '').replace(/\.+$/, '');
                 const reason = err.status === 429
                     ? `Gemini's free-tier limit was reached${googleReason ? ` (${googleReason})` : ''}`
-                    : err.message;
+                    : this.lastError;
                 this.onStatus(`${reason}. Retrying in ${delay / 1000} seconds…`);
                 await wait(delay);
             } finally {
