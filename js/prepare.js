@@ -1,7 +1,8 @@
 // Prepared Subtitles: reads ahead of the player, sends each stretch of the episode to
 // Gemini and gets back timed sentence pairs, so each line can appear as it is spoken
-const MODEL = 'gemini-3.8-flash';
-const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
+// If a key can't use the newest Flash model this way, the previous one is tried instead
+const MODELS = ['gemini-3.8-flash', 'gemini-3.6-flash'];
+const API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 const SAMPLE_RATE = 16000;
 // Stretches are cut at the quietest moment in this range, so sentences rarely split
 const CHUNK_SECONDS = { min: 24, max: 36 };
@@ -93,12 +94,21 @@ function parseSegments(text) {
     };
 }
 
-async function requestSegments(apiKey, wavBase64, durationSeconds, targetLang, useThinkingLevel) {
+// Google's own error text, without the API key, short enough for the status line
+function describeGoogleError(detail) {
+    try {
+        return JSON.parse(detail).error?.message?.split('\n')[0].slice(0, 160) || '';
+    } catch {
+        return '';
+    }
+}
+
+async function requestSegments(apiKey, model, wavBase64, durationSeconds, targetLang, useThinkingLevel) {
     const generationConfig = { responseMimeType: 'application/json', temperature: 0.2 };
     // Less thinking answers faster; Gemini 3.8 Flash goes no lower than "low"
     if (useThinkingLevel) generationConfig.thinkingConfig = { thinkingLevel: 'low' };
 
-    const response = await fetch(`${ENDPOINT}?key=${encodeURIComponent(apiKey)}`, {
+    const response = await fetch(`${API_BASE}/${model}:generateContent?key=${encodeURIComponent(apiKey)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -114,14 +124,19 @@ async function requestSegments(apiKey, wavBase64, durationSeconds, targetLang, u
     });
     if (!response.ok) {
         const detail = await response.text().catch(() => '');
-        const error = new Error(`Gemini returned ${response.status}`);
+        const error = new Error(`Gemini error ${response.status}${describeGoogleError(detail) ? `: ${describeGoogleError(detail)}` : ''}`);
         error.status = response.status;
         error.detail = detail;
         throw error;
     }
     const data = await response.json();
     const text = (data.candidates?.[0]?.content?.parts || []).map(part => part.text || '').join('');
-    return parseSegments(text);
+    try {
+        return parseSegments(text);
+    } catch {
+        const reason = data.candidates?.[0]?.finishReason;
+        throw new Error(`Gemini's answer couldn't be read${reason ? ` (${reason})` : ''}`);
+    }
 }
 
 export class SubtitlePreparer {
@@ -132,6 +147,8 @@ export class SubtitlePreparer {
         this.ranges = [];
         this.stopped = false;
         this.useThinkingLevel = true;
+        this.modelIndex = 0;
+        this.lastError = '';
     }
 
     // True once the part of the episode at this time has been prepared
@@ -187,7 +204,7 @@ export class SubtitlePreparer {
             const result = await this.requestWithRetries(this.samples.subarray(startSample, endSample), end - start);
             if (this.stopped) return;
             if (!result) {
-                this.onError("Gemini couldn't prepare subtitles right now, possibly because of free-tier limits. Try again later, or switch to Live mode.");
+                this.onError(`Prepared subtitles stopped. ${this.lastError}. Switch to Live mode, or try again later.`);
                 return;
             }
 
@@ -206,21 +223,38 @@ export class SubtitlePreparer {
 
     async requestWithRetries(samples, durationSeconds) {
         const wav = encodeWavBase64(samples);
-        for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+        let retries = 0;
+        while (!this.stopped) {
+            const model = MODELS[this.modelIndex];
             try {
-                return await requestSegments(this.apiKey, wav, durationSeconds, this.targetLang, this.useThinkingLevel);
+                return await requestSegments(this.apiKey, model, wav, durationSeconds, this.targetLang, this.useThinkingLevel);
             } catch (err) {
-                console.warn("Prepared subtitles request failed:", err.message, err.detail?.slice(0, 300));
-                // An older or different model may not take the thinking setting, so drop it once
+                this.lastError = err.message;
+                console.warn("Prepared subtitles request failed:", model, err.message, err.detail?.slice(0, 500));
+                // Some models don't take the thinking setting, so drop it once and resend
                 if (err.status === 400 && this.useThinkingLevel && /thinking/i.test(err.detail || '')) {
                     this.useThinkingLevel = false;
-                    attempt--;
                     continue;
                 }
-                if (err.status === 400 || err.status === 401 || err.status === 403) return null;
-                if (this.stopped || attempt === RETRY_DELAYS_MS.length) return null;
-                this.onStatus('Gemini is busy. Retrying…');
-                await wait(RETRY_DELAYS_MS[attempt]);
+                // Model not available for this key, or with no free quota at all ("limit: 0"):
+                // try the next one
+                const noFreeQuota = err.status === 429 && /limit:\s*0\b/.test(err.detail || '');
+                if ((err.status === 404 || noFreeQuota) && this.modelIndex < MODELS.length - 1) {
+                    this.modelIndex++;
+                    this.useThinkingLevel = true;
+                    this.onStatus(`${model} isn't available here. Trying ${MODELS[this.modelIndex]}…`);
+                    continue;
+                }
+                // Wrong key, bad request or not allowed: retrying won't help
+                if ([400, 401, 403, 404].includes(err.status)) return null;
+                if (retries === RETRY_DELAYS_MS.length) return null;
+                const delay = RETRY_DELAYS_MS[retries++];
+                const googleReason = describeGoogleError(err.detail || '');
+                const reason = err.status === 429
+                    ? `Gemini's free-tier limit was reached${googleReason ? ` (${googleReason})` : ''}`
+                    : err.message;
+                this.onStatus(`${reason}. Retrying in ${delay / 1000} seconds…`);
+                await wait(delay);
             }
         }
         return null;
