@@ -3,6 +3,7 @@ import { SUPPORTED_LANGUAGES, LIVE_MODELS, getLanguageByCode, getTranslationLang
 import { startElementCapture } from './audio.js';
 import { connectGeminiLive, disconnectGeminiLive, isSessionActive } from './websocket.js';
 import { SubtitlePreparer, decodeEpisode } from './prepare.js';
+import { deleteSavedSubtitles, loadSavedSubtitles, saveSubtitles, subtitleCacheKey } from './subtitle-cache.js';
 
 // Live Translate transcribes and translates continuously, which suits long talk
 const SUBTITLE_MODEL = LIVE_MODELS.find(m => m.isTranslateModel);
@@ -303,22 +304,46 @@ function getEpisodeSamples() {
 // -----------------------------------------------------------------------------
 // Prepared mode: timed lines from Gemini, shown as the player reaches them
 // -----------------------------------------------------------------------------
-function startPrepared() {
+async function startPrepared({ forget = false } = {}) {
     stopPrepared();
+    state.isStartingPrepared = true;
+    try {
+        await beginPrepared(forget);
+    } finally {
+        state.isStartingPrepared = false;
+    }
+}
+
+async function beginPrepared(forget) {
     clearTranscript();
     if (!state.episodeFile) return;
     if (!state.apiKey) {
         setStatus('Add your Gemini API key on the Live page first: open Settings there, then come back.');
         return;
     }
+
+    // Anything prepared before for this episode and language is reused, not requested again
+    const cacheKey = subtitleCacheKey(state.episodeFile, state.targetLang);
+    const startedFor = state.episodeFile;
+    if (forget) await deleteSavedSubtitles(cacheKey);
+    const saved = forget ? null : await loadSavedSubtitles(cacheKey);
+    if (state.episodeFile !== startedFor || state.mode !== 'prepared' || state.preparer) return;
+    if (saved?.cues?.length) {
+        state.cues = saved.cues;
+        renderPreparedTranscript();
+        renderPreparedAt(audioEl.currentTime, true);
+    }
+
     const preparer = new SubtitlePreparer({
         apiKey: state.apiKey,
         loadSamples: getEpisodeSamples,
         targetLang: state.targetLang,
+        savedRanges: saved?.ranges || [],
         getPlayhead: () => audioEl.currentTime,
         onCues: (cues) => {
             if (state.preparer !== preparer) return;
             state.cues = [...state.cues, ...cues.filter(c => c.original || c.translation)].sort((a, b) => a.start - b.start);
+            saveSubtitles(cacheKey, { cues: state.cues, ranges: preparer.ranges });
             renderPreparedTranscript();
             renderPreparedAt(audioEl.currentTime, true);
             resumeIfBuffered();
@@ -343,6 +368,7 @@ function stopPrepared() {
     state.preparer?.stop();
     state.preparer = null;
     state.isBuffering = false;
+    clearInterval(state.bufferTimer);
     state.preparerStatus = '';
 }
 
@@ -359,6 +385,9 @@ function hasBufferAhead(margin) {
 
 function holdForSubtitles(afterStall = false) {
     state.isBuffering = true;
+    // Saved subtitles need no new answer from Gemini, so readiness is also checked on a timer
+    clearInterval(state.bufferTimer);
+    state.bufferTimer = setInterval(resumeIfBuffered, 500);
     state.resumeBuffer = afterStall ? RESUME_BUFFER_SECONDS : START_BUFFER_SECONDS;
     audioEl.pause();
     showPreparedStatus();
@@ -367,6 +396,7 @@ function holdForSubtitles(afterStall = false) {
 function resumeIfBuffered() {
     if (!state.isBuffering || !hasBufferAhead(state.resumeBuffer)) return;
     state.isBuffering = false;
+    clearInterval(state.bufferTimer);
     showPreparedStatus();
     audioEl.play().catch(() => setStatus('Subtitles are ready. Press play to continue.'));
 }
@@ -538,7 +568,7 @@ document.addEventListener('DOMContentLoaded', () => {
     audioEl.addEventListener('play', () => {
         if (state.mode === 'live' && !isSessionActive()) startSubtitles();
         if (state.mode === 'prepared') {
-            if (!state.preparer) startPrepared();
+            if (!state.preparer && !state.isStartingPrepared) startPrepared();
             if (hasBufferAhead(START_BUFFER_SECONDS)) {
                 state.isBuffering = false;
                 showPreparedStatus();
@@ -568,7 +598,7 @@ document.addEventListener('DOMContentLoaded', () => {
     $('btn-copy-log').addEventListener('click', copyTranscript);
     $('btn-export-md').addEventListener('click', downloadTranscript);
     // Clearing in Prepared mode starts the preparation over, since lines are kept by time
-    $('btn-clear-log').addEventListener('click', () => (state.mode === 'prepared' ? startPrepared() : clearTranscript()));
+    $('btn-clear-log').addEventListener('click', () => (state.mode === 'prepared' ? startPrepared({ forget: true }) : clearTranscript()));
 
     document.querySelectorAll('.btn-mode-pill').forEach(btn => {
         btn.addEventListener('click', () => selectMode(btn.getAttribute('data-mode')));

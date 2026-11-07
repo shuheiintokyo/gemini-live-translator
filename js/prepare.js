@@ -5,8 +5,11 @@ const MODELS = ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash-lite']
 // Less thinking answers faster, and transcribing needs little. Each model's lowest level:
 // Gemini 3.8 Flash goes no lower than "low"
 const THINKING_LEVELS = { 'gemini-3.8-flash': 'low', 'gemini-3.6-flash': 'minimal', 'gemini-3.5-flash-lite': 'minimal' };
-// Two stretches are prepared at once, so preparation pulls ahead of playback faster
-const CONCURRENT_REQUESTS = 2;
+// One request at a time keeps within the free per-minute limit
+const CONCURRENT_REQUESTS = 1;
+// Only this far ahead of where you're listening is prepared, so stopping early or
+// skipping around doesn't spend requests on parts you never hear
+const LOOKAHEAD_SECONDS = 180;
 const API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 const SAMPLE_RATE = 16000;
 // Stretches are cut at the quietest moment in this range, so sentences rarely split
@@ -150,10 +153,11 @@ async function requestSegments(apiKey, model, wavBase64, durationSeconds, target
 
 export class SubtitlePreparer {
     // loadSamples returns the decoded episode, shared with Live mode so it's decoded once
-    constructor({ apiKey, loadSamples, targetLang, getPlayhead, onCues, onLanguage, onStatus, onError }) {
+    // savedRanges are parts already prepared earlier (kept on this device), which are skipped
+    constructor({ apiKey, loadSamples, targetLang, getPlayhead, onCues, onLanguage, onStatus, onError, savedRanges = [] }) {
         Object.assign(this, { apiKey, loadSamples, targetLang, getPlayhead, onCues, onLanguage, onStatus, onError });
         this.samples = null;
-        this.ranges = [];
+        this.ranges = savedRanges.map(range => [...range]);
         // Stretches sent to Gemini and not yet answered, so two requests never overlap
         this.pending = [];
         this.stopped = false;
@@ -226,17 +230,19 @@ export class SubtitlePreparer {
         const duration = this.samples.length / SAMPLE_RATE;
         this.duration = duration;
 
-        // Prepares the whole episode: onward from where you're listening first, then
-        // any part skipped over earlier
         await Promise.all(Array.from({ length: CONCURRENT_REQUESTS }, () => this.work(duration)));
     }
 
     async work(duration) {
         while (!this.stopped) {
-            let start = this.nextStart(this.getPlayhead(), true);
-            if (start >= duration - 0.5) start = this.nextStart(0, true);
-            if (start >= duration - 0.5) {
-                if (!this.pending.length) this.onStatus('All subtitles are ready.');
+            const playhead = this.getPlayhead();
+            const start = this.nextStart(playhead, true);
+            if (start >= duration - 0.5 || start >= playhead + LOOKAHEAD_SECONDS) {
+                if (!this.pending.length) {
+                    this.onStatus(start >= duration - 0.5
+                        ? 'Subtitles are ready to the end.'
+                        : `Subtitles ready ${Math.round(LOOKAHEAD_SECONDS / 60)} minutes ahead. More are prepared as you listen.`);
+                }
                 await wait(IDLE_CHECK_MS);
                 continue;
             }
