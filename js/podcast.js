@@ -13,6 +13,8 @@ const CUE_HOLD_SECONDS = 1.2;
 // Playback waits until this much is prepared ahead, and pauses again if it gets this close
 const START_BUFFER_SECONDS = 8;
 const STALL_BUFFER_SECONDS = 1.5;
+// After playback had to stop, it waits for more, so it doesn't stop again moments later
+const RESUME_BUFFER_SECONDS = 30;
 // Long sentences are cut into subtitle-sized lines, about two TV lines each
 // (TV styles use roughly 42 Latin characters per line, fewer for Chinese or Japanese)
 const MAX_LINE_LENGTH = { spaced: 84, unspaced: 32 };
@@ -37,6 +39,7 @@ const state = {
     shownCue: -1,
     // Playback is held, like video buffering, until subtitles catch up
     isBuffering: false,
+    resumeBuffer: START_BUFFER_SECONDS,
     bufferStart: { original: 0, translation: 0 }
 };
 
@@ -354,14 +357,15 @@ function hasBufferAhead(margin) {
     return state.preparer && state.preparer.bufferedAhead(audioEl.currentTime) >= margin;
 }
 
-function holdForSubtitles() {
+function holdForSubtitles(afterStall = false) {
     state.isBuffering = true;
+    state.resumeBuffer = afterStall ? RESUME_BUFFER_SECONDS : START_BUFFER_SECONDS;
     audioEl.pause();
     showPreparedStatus();
 }
 
 function resumeIfBuffered() {
-    if (!state.isBuffering || !hasBufferAhead(START_BUFFER_SECONDS)) return;
+    if (!state.isBuffering || !hasBufferAhead(state.resumeBuffer)) return;
     state.isBuffering = false;
     showPreparedStatus();
     audioEl.play().catch(() => setStatus('Subtitles are ready. Press play to continue.'));
@@ -424,7 +428,7 @@ function renderPreparedTranscript() {
 function followPlayhead() {
     if (state.mode !== 'prepared' || audioEl.paused) return;
     if (!hasBufferAhead(STALL_BUFFER_SECONDS)) {
-        holdForSubtitles();
+        holdForSubtitles(true);
         return;
     }
     renderPreparedAt(audioEl.currentTime);

@@ -2,6 +2,11 @@
 // Gemini and gets back timed sentence pairs, so each line can appear as it is spoken
 // Best first. When one model isn't available or its free quota runs out, the next is used
 const MODELS = ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash-lite'];
+// Less thinking answers faster, and transcribing needs little. Each model's lowest level:
+// Gemini 3.8 Flash goes no lower than "low"
+const THINKING_LEVELS = { 'gemini-3.8-flash': 'low', 'gemini-3.6-flash': 'minimal', 'gemini-3.5-flash-lite': 'minimal' };
+// Two stretches are prepared at once, so preparation pulls ahead of playback faster
+const CONCURRENT_REQUESTS = 2;
 const API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 const SAMPLE_RATE = 16000;
 // Stretches are cut at the quietest moment in this range, so sentences rarely split
@@ -109,8 +114,7 @@ function describeGoogleError(detail) {
 
 async function requestSegments(apiKey, model, wavBase64, durationSeconds, targetLang, useThinkingLevel) {
     const generationConfig = { responseMimeType: 'application/json', temperature: 0.2 };
-    // Less thinking answers faster; Gemini 3.8 Flash goes no lower than "low"
-    if (useThinkingLevel) generationConfig.thinkingConfig = { thinkingLevel: 'low' };
+    if (useThinkingLevel && THINKING_LEVELS[model]) generationConfig.thinkingConfig = { thinkingLevel: THINKING_LEVELS[model] };
 
     const response = await fetch(`${API_BASE}/${model}:generateContent?key=${encodeURIComponent(apiKey)}`, {
         method: 'POST',
@@ -150,6 +154,8 @@ export class SubtitlePreparer {
         Object.assign(this, { apiKey, loadSamples, targetLang, getPlayhead, onCues, onLanguage, onStatus, onError });
         this.samples = null;
         this.ranges = [];
+        // Stretches sent to Gemini and not yet answered, so two requests never overlap
+        this.pending = [];
         this.stopped = false;
         this.useThinkingLevel = true;
         // Models that can't be used for this episode (missing, or free quota used up)
@@ -190,13 +196,15 @@ export class SubtitlePreparer {
     }
 
     // The next stretch starts where the prepared part around the playhead ends,
-    // or at the playhead itself after a jump into an unprepared part
-    nextStart(playhead) {
+    // or at the playhead itself after a jump into an unprepared part.
+    // With includePending, stretches still being prepared count as taken
+    nextStart(playhead, includePending = false) {
+        const taken = includePending ? [...this.ranges, ...this.pending] : this.ranges;
         let position = playhead;
         let moved = true;
         while (moved) {
             moved = false;
-            for (const [start, end] of this.ranges) {
+            for (const [start, end] of taken) {
                 if (position >= start - 0.5 && position < end) {
                     position = end;
                     moved = true;
@@ -220,24 +228,33 @@ export class SubtitlePreparer {
 
         // Prepares the whole episode: onward from where you're listening first, then
         // any part skipped over earlier
+        await Promise.all(Array.from({ length: CONCURRENT_REQUESTS }, () => this.work(duration)));
+    }
+
+    async work(duration) {
         while (!this.stopped) {
-            let start = this.nextStart(this.getPlayhead());
-            if (start >= duration - 0.5) start = this.nextStart(0);
+            let start = this.nextStart(this.getPlayhead(), true);
+            if (start >= duration - 0.5) start = this.nextStart(0, true);
             if (start >= duration - 0.5) {
-                this.onStatus('All subtitles are ready.');
+                if (!this.pending.length) this.onStatus('All subtitles are ready.');
                 await wait(IDLE_CHECK_MS);
                 continue;
             }
 
             const startSample = Math.floor(start * SAMPLE_RATE);
-            const continuesPrepared = this.ranges.some(([, rangeEnd]) => Math.abs(rangeEnd - start) < 0.01);
+            const continuesPrepared = [...this.ranges, ...this.pending].some(([, rangeEnd]) => Math.abs(rangeEnd - start) < 0.01);
             const endSample = findQuietCut(this.samples, startSample, continuesPrepared ? CHUNK_SECONDS : FIRST_CHUNK_SECONDS);
             const end = endSample / SAMPLE_RATE;
+            // Claimed before the request goes out, so the other worker picks the next stretch
+            const claim = [start, end];
+            this.pending.push(claim);
             this.onStatus(`Preparing subtitles with ${this.model}: ${Math.round(this.preparedFraction() * 100)}% ready…`);
 
             const result = await this.requestWithRetries(this.samples.subarray(startSample, endSample), end - start);
+            this.pending = this.pending.filter(item => item !== claim);
             if (this.stopped) return;
             if (!result) {
+                this.stopped = true;
                 this.onError(`Prepared subtitles stopped. ${this.lastError}. Switch to Live mode, or try again later.`);
                 return;
             }
@@ -249,7 +266,7 @@ export class SubtitlePreparer {
                 original: segment.original.trim(),
                 translation: String(segment.translation || '').trim()
             }));
-            this.ranges.push([start, end]);
+            this.ranges.push(claim);
             this.onCues(cues);
         }
     }
