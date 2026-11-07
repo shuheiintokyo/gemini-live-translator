@@ -2,11 +2,14 @@
 import { SUPPORTED_LANGUAGES, LIVE_MODELS, getLanguageByCode, getTranslationLanguageCode } from './config.js';
 import { startElementCapture, unlockElementPlayback } from './audio.js';
 import { connectGeminiLive, disconnectGeminiLive, isSessionActive } from './websocket.js';
+import { SubtitlePreparer } from './prepare.js';
 
 // Live Translate transcribes and translates continuously, which suits long talk
 const SUBTITLE_MODEL = LIVE_MODELS.find(m => m.isTranslateModel);
 const AUDIO_FILE = /\.(mp3|m4a|aac|wav|ogg|opus|flac)$/i;
 const MAX_TAG_BYTES = 8 * 1048576;
+// A prepared line stays up this long after its end time, unless the next one starts
+const CUE_HOLD_SECONDS = 1.2;
 // Long sentences are cut into subtitle-sized lines, about two TV lines each
 // (TV styles use roughly 42 Latin characters per line, fewer for Chinese or Japanese)
 const MAX_LINE_LENGTH = { spaced: 84, unspaced: 32 };
@@ -21,6 +24,12 @@ const state = {
     lines: [],
     buffers: { original: '', translation: '' },
     focus: localStorage.getItem('gemini_podcast_focus') === 'original' ? 'original' : 'translation',
+    // Prepared reads ahead of the player and times each line; Live follows the audio as it plays
+    mode: localStorage.getItem('gemini_podcast_mode') === 'live' ? 'live' : 'prepared',
+    episodeFile: null,
+    preparer: null,
+    cues: [],
+    shownCue: -1,
     bufferStart: { original: 0, translation: 0 }
 };
 
@@ -119,14 +128,18 @@ function renderEpisodes() {
 
 function selectEpisode(episode) {
     disconnectGeminiLive();
+    stopPrepared();
     if (state.currentUrl) URL.revokeObjectURL(state.currentUrl);
     state.currentUrl = URL.createObjectURL(episode.file);
+    state.episodeFile = episode.file;
     state.episodeName = episode.title;
     audioEl.src = state.currentUrl;
     $('episode-title').textContent = episode.title;
     $('episode-show').textContent = episode.show;
     clearTranscript();
-    setStatus('Press play to start subtitles. They follow the audio a few seconds behind.');
+    // Preparing starts straight away, so the first lines are ready by the time you press play
+    if (state.mode === 'prepared') startPrepared();
+    else setStatus('Press play to start subtitles. They follow the audio a few seconds behind.');
 }
 
 // -----------------------------------------------------------------------------
@@ -237,6 +250,8 @@ function applyDetectedLanguage(code) {
 
 function clearTranscript() {
     state.lines = [];
+    state.cues = [];
+    state.shownCue = -1;
     state.buffers = { original: '', translation: '' };
     state.detectedLang = null;
     $('transcript-rows').innerHTML = '';
@@ -264,7 +279,106 @@ async function updateWakeLock() {
 }
 
 // -----------------------------------------------------------------------------
-// Gemini session follows the player
+// Prepared mode: timed lines from Gemini, shown as the player reaches them
+// -----------------------------------------------------------------------------
+function startPrepared() {
+    stopPrepared();
+    clearTranscript();
+    if (!state.episodeFile) return;
+    if (!state.apiKey) {
+        setStatus('Add your Gemini API key on the Live page first: open Settings there, then come back.');
+        return;
+    }
+    const preparer = new SubtitlePreparer({
+        apiKey: state.apiKey,
+        file: state.episodeFile,
+        targetLang: state.targetLang,
+        getPlayhead: () => audioEl.currentTime,
+        onCues: (cues) => {
+            if (state.preparer !== preparer) return;
+            state.cues = [...state.cues, ...cues.filter(c => c.original || c.translation)].sort((a, b) => a.start - b.start);
+            renderPreparedTranscript();
+            renderPreparedAt(audioEl.currentTime, true);
+        },
+        onLanguage: (code) => { if (state.preparer === preparer) applyDetectedLanguage(code); },
+        onStatus: (text) => { if (state.preparer === preparer && !state.detectedLang) setStatus(text); },
+        onError: (text) => {
+            if (state.preparer !== preparer) return;
+            setStatus(text);
+            showToast(text, "error", "warning");
+        }
+    });
+    state.preparer = preparer;
+    preparer.run();
+}
+
+function stopPrepared() {
+    state.preparer?.stop();
+    state.preparer = null;
+}
+
+function cueIndexAt(seconds) {
+    let index = -1;
+    for (let i = 0; i < state.cues.length && state.cues[i].start <= seconds; i++) index = i;
+    return index;
+}
+
+function renderPreparedAt(seconds, force = false) {
+    const index = cueIndexAt(seconds);
+    const cue = state.cues[index];
+    const isActive = cue && seconds <= cue.end + CUE_HOLD_SECONDS;
+    const key = isActive ? index : -2 - index;
+    if (key === state.shownCue && !force) return;
+    state.shownCue = key;
+
+    // Same roll-up look as Live: the line before stays above, faded
+    const previous = state.cues[isActive ? index - 1 : index];
+    $('sub-original').textContent = isActive ? cue.original : '';
+    $('sub-translation').textContent = isActive ? cue.translation : '';
+    $('sub-original-prev').textContent = previous ? previous.original : '';
+    $('sub-translation-prev').textContent = previous ? previous.translation : '';
+    document.querySelectorAll('#transcript-rows [data-cue]').forEach(row => {
+        row.classList.toggle('bg-primary-container/20', isActive && Number(row.dataset.cue) === index);
+    });
+}
+
+function renderPreparedTranscript() {
+    const rows = $('transcript-rows');
+    rows.innerHTML = '';
+    $('transcript-empty').classList.toggle('hidden', state.cues.length > 0);
+    state.cues.forEach((cue, i) => {
+        // Tapping a line jumps the episode there, which helps when studying a sentence
+        const row = document.createElement('button');
+        row.type = 'button';
+        row.dataset.cue = String(i);
+        row.className = 'grid grid-cols-[3.5rem_1fr] gap-space-sm p-space-sm text-left rounded-lg border-b border-white/[0.04] hover:bg-surface-container-high/60 cursor-pointer';
+        const timeEl = document.createElement('span');
+        timeEl.className = 'font-telemetry-data text-[11px] text-outline pt-0.5';
+        timeEl.textContent = formatTime(cue.start);
+        const textEl = document.createElement('span');
+        textEl.className = 'flex flex-col gap-0.5';
+        const original = document.createElement('span');
+        original.className = 'text-body-sm text-on-surface-variant';
+        original.textContent = cue.original;
+        const translation = document.createElement('span');
+        translation.className = 'text-body-md text-on-surface';
+        translation.textContent = cue.translation;
+        textEl.append(original, translation);
+        row.append(timeEl, textEl);
+        row.addEventListener('click', () => { audioEl.currentTime = cue.start; });
+        rows.appendChild(row);
+    });
+}
+
+// Checks the playhead every frame while playing, so a line appears the moment it starts
+function followPlayhead() {
+    if (state.mode !== 'prepared') return;
+    renderPreparedAt(audioEl.currentTime);
+    if (!audioEl.paused) requestAnimationFrame(followPlayhead);
+}
+
+// -----------------------------------------------------------------------------
+// Live mode: Gemini session follows the player
 // -----------------------------------------------------------------------------
 function startSubtitles() {
     if (!state.apiKey) {
@@ -306,11 +420,18 @@ function stopSubtitles() {
 // Transcript Export
 // -----------------------------------------------------------------------------
 function transcriptText() {
+    if (state.mode === 'prepared') {
+        return state.cues.map(cue => `[${formatTime(cue.start)}] ${cue.original}\n    ${cue.translation}`).join('\n');
+    }
     return state.lines.map(line => line.kind === 'original' ? `[${formatTime(line.time)}] ${line.text}` : `    ${line.text}`).join('\n');
 }
 
+function hasTranscript() {
+    return state.mode === 'prepared' ? state.cues.length > 0 : state.lines.length > 0;
+}
+
 function copyTranscript() {
-    if (!state.lines.length) {
+    if (!hasTranscript()) {
         showToast("Nothing to copy yet.");
         return;
     }
@@ -318,7 +439,7 @@ function copyTranscript() {
 }
 
 function downloadTranscript() {
-    if (!state.lines.length) {
+    if (!hasTranscript()) {
         showToast("Nothing to export yet.");
         return;
     }
@@ -343,7 +464,8 @@ document.addEventListener('DOMContentLoaded', () => {
     select.addEventListener('change', () => {
         state.targetLang = getLanguageByCode(select.value);
         localStorage.setItem('gemini_podcast_lang', state.targetLang.code);
-        if (isSessionActive()) startSubtitles();
+        if (state.mode === 'prepared') startPrepared();
+        else if (isSessionActive()) startSubtitles();
     });
 
     $('folder-input').addEventListener('change', (e) => loadEpisodes(e.target.files));
@@ -357,9 +479,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('pointerdown', () => unlockElementPlayback(audioEl), { capture: true });
     audioEl.addEventListener('play', () => {
         unlockElementPlayback(audioEl);
-        if (!isSessionActive()) startSubtitles();
+        if (state.mode === 'live' && !isSessionActive()) startSubtitles();
+        if (state.mode === 'prepared') {
+            if (!state.preparer) startPrepared();
+            followPlayhead();
+        }
     });
-    audioEl.addEventListener('ended', stopSubtitles);
+    audioEl.addEventListener('seeked', () => { if (state.mode === 'prepared') renderPreparedAt(audioEl.currentTime, true); });
+    audioEl.addEventListener('ended', () => { if (state.mode === 'live') stopSubtitles(); });
     ['play', 'pause', 'ended'].forEach(type => audioEl.addEventListener(type, updateWakeLock));
     document.addEventListener('visibilitychange', updateWakeLock);
 
@@ -373,5 +500,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
     $('btn-copy-log').addEventListener('click', copyTranscript);
     $('btn-export-md').addEventListener('click', downloadTranscript);
-    $('btn-clear-log').addEventListener('click', clearTranscript);
+    // Clearing in Prepared mode starts the preparation over, since lines are kept by time
+    $('btn-clear-log').addEventListener('click', () => (state.mode === 'prepared' ? startPrepared() : clearTranscript()));
+
+    document.querySelectorAll('.btn-mode-pill').forEach(btn => {
+        btn.addEventListener('click', () => selectMode(btn.getAttribute('data-mode')));
+    });
+    applyMode();
 });
+
+function applyMode() {
+    localStorage.setItem('gemini_podcast_mode', state.mode);
+    document.querySelectorAll('.btn-mode-pill').forEach(btn => {
+        const isSelected = btn.getAttribute('data-mode') === state.mode;
+        btn.setAttribute('aria-checked', String(isSelected));
+        btn.className = `btn-mode-pill px-3 py-1 rounded-lg text-label-sm transition-all cursor-pointer ${isSelected
+            ? 'bg-primary-container text-on-primary-container font-bold'
+            : 'text-on-surface-variant hover:text-on-surface'}`;
+    });
+    $('mode-hint').textContent = state.mode === 'prepared'
+        ? 'Prepared: reads ahead and times each line, so subtitles appear as words are spoken. The first lines take a few seconds.'
+        : 'Live: follows the audio as it plays, a few seconds behind. Use it if Prepared mode has trouble with a file.';
+}
+
+function selectMode(mode) {
+    if (mode === state.mode) return;
+    stopSubtitles();
+    stopPrepared();
+    state.mode = mode;
+    applyMode();
+    clearTranscript();
+    if (state.mode === 'prepared') startPrepared();
+    else if (!audioEl.paused) startSubtitles();
+    else setStatus('Press play to start subtitles. They follow the audio a few seconds behind.');
+}

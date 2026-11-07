@@ -84,7 +84,15 @@
                     </div>
                     <audio id="episode-audio" controls preload="metadata" class="w-full"></audio>
 
-                    <div class="flex items-center justify-between gap-space-sm">
+                    <div class="flex flex-wrap items-center justify-between gap-space-sm">
+                        <span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Subtitle mode</span>
+                        <div class="grid grid-cols-2 gap-1 p-1 rounded-xl bg-surface-container-lowest" role="radiogroup" aria-label="Subtitle mode">
+                            <button class="btn-mode-pill" type="button" role="radio" data-mode="prepared">Prepared</button>
+                            <button class="btn-mode-pill" type="button" role="radio" data-mode="live">Live</button>
+                        </div>
+                    </div>
+                    <p id="mode-hint" class="text-[11px] text-on-surface-variant leading-snug -mt-1"></p>
+                    <div class="flex flex-wrap items-center justify-between gap-space-sm">
                         <span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Large text</span>
                         <div class="grid grid-cols-2 gap-1 p-1 rounded-xl bg-surface-container-lowest" role="radiogroup" aria-label="Which language is shown large">
                             <button class="btn-focus-pill" type="button" data-focus="original">Original</button>
