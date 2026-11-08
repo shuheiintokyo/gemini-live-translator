@@ -45,6 +45,9 @@ const state = {
     preparer: null,
     cues: [],
     shownCue: -1,
+    // Each prepared line gets a lasting id, so its row can be found without redrawing the list
+    nextCueId: 0,
+    highlightedRow: null,
     // Playback is held, like video buffering, until subtitles catch up
     isBuffering: false,
     resumeBuffer: START_BUFFER_SECONDS,
@@ -275,6 +278,7 @@ function applyDetectedLanguage(code) {
 function clearTranscript() {
     state.lines = [];
     state.cues = [];
+    state.highlightedRow = null;
     state.shownCue = -1;
     state.buffers = { original: '', translation: '' };
     state.detectedLang = null;
@@ -359,10 +363,9 @@ async function beginPrepared(forget) {
         getPlayhead: () => audioEl.currentTime,
         onCues: (cues) => {
             if (state.preparer !== preparer) return;
-            state.cues = [...state.cues, ...cues.filter(c => c.original || c.translation)].sort((a, b) => a.start - b.start);
+            insertCues(cues.filter(c => c.original || c.translation));
             saveSubtitles(cacheKey, { cues: state.cues, ranges: preparer.ranges });
-            renderPreparedTranscript();
-            renderPreparedAt(audioEl.currentTime, true);
+            renderPreparedAt(audioEl.currentTime);
             resumeIfBuffered();
         },
         onLanguage: (code) => { if (state.preparer === preparer) applyDetectedLanguage(code); },
@@ -424,51 +427,88 @@ function cueIndexAt(seconds) {
     return index;
 }
 
+// Only changes text that differs, so a line already on screen is never redrawn
+function setText(element, text) {
+    if (element.textContent !== text) element.textContent = text;
+}
+
 function renderPreparedAt(seconds, force = false) {
     const index = cueIndexAt(seconds);
     const cue = state.cues[index];
     const isActive = cue && seconds <= cue.end + CUE_HOLD_SECONDS;
-    const key = isActive ? index : -2 - index;
+    const key = isActive ? cue.id : `after-${cue?.id}`;
     if (key === state.shownCue && !force) return;
     state.shownCue = key;
 
     // Same roll-up look as Live: the line before stays above, faded
     const previous = state.cues[isActive ? index - 1 : index];
-    $('sub-original').textContent = isActive ? cue.original : '';
-    $('sub-translation').textContent = isActive ? cue.translation : '';
-    $('sub-original-prev').textContent = previous ? previous.original : '';
-    $('sub-translation-prev').textContent = previous ? previous.translation : '';
-    document.querySelectorAll('#transcript-rows [data-cue]').forEach(row => {
-        row.classList.toggle('bg-primary-container/20', isActive && Number(row.dataset.cue) === index);
-    });
+    setText($('sub-original'), isActive ? cue.original : '');
+    setText($('sub-translation'), isActive ? cue.translation : '');
+    setText($('sub-original-prev'), previous ? previous.original : '');
+    setText($('sub-translation-prev'), previous ? previous.translation : '');
+
+    // Only the old and new highlighted rows change
+    const row = isActive ? $('transcript-rows').querySelector(`[data-cue="${cue.id}"]`) : null;
+    if (state.highlightedRow !== row) {
+        state.highlightedRow?.classList.remove('bg-primary-container/20');
+        row?.classList.add('bg-primary-container/20');
+        state.highlightedRow = row;
+    }
 }
 
+function createCueRow(cue) {
+    // Tapping a line jumps the episode there, which helps when studying a sentence
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.dataset.cue = String(cue.id);
+    row.className = 'grid grid-cols-[3.5rem_1fr] gap-space-sm p-space-sm text-left rounded-lg border-b border-white/[0.04] hover:bg-surface-container-high/60 cursor-pointer';
+    const timeEl = document.createElement('span');
+    timeEl.className = 'font-telemetry-data text-[11px] text-outline pt-0.5';
+    timeEl.textContent = formatTime(cue.start);
+    const textEl = document.createElement('span');
+    textEl.className = 'flex flex-col gap-0.5';
+    const original = document.createElement('span');
+    original.className = 'text-body-sm text-on-surface-variant';
+    original.textContent = cue.original;
+    const translation = document.createElement('span');
+    translation.className = 'text-body-md text-on-surface';
+    translation.textContent = cue.translation;
+    textEl.append(original, translation);
+    row.append(timeEl, textEl);
+    row.addEventListener('click', () => { audioEl.currentTime = cue.start; });
+    return row;
+}
+
+// Draws the whole list once, when saved subtitles are loaded
 function renderPreparedTranscript() {
     const rows = $('transcript-rows');
-    rows.innerHTML = '';
+    state.highlightedRow = null;
+    state.cues.forEach(cue => { if (cue.id === undefined) cue.id = state.nextCueId++; });
+    rows.replaceChildren(...state.cues.map(createCueRow));
     $('transcript-empty').classList.toggle('hidden', state.cues.length > 0);
-    state.cues.forEach((cue, i) => {
-        // Tapping a line jumps the episode there, which helps when studying a sentence
-        const row = document.createElement('button');
-        row.type = 'button';
-        row.dataset.cue = String(i);
-        row.className = 'grid grid-cols-[3.5rem_1fr] gap-space-sm p-space-sm text-left rounded-lg border-b border-white/[0.04] hover:bg-surface-container-high/60 cursor-pointer';
-        const timeEl = document.createElement('span');
-        timeEl.className = 'font-telemetry-data text-[11px] text-outline pt-0.5';
-        timeEl.textContent = formatTime(cue.start);
-        const textEl = document.createElement('span');
-        textEl.className = 'flex flex-col gap-0.5';
-        const original = document.createElement('span');
-        original.className = 'text-body-sm text-on-surface-variant';
-        original.textContent = cue.original;
-        const translation = document.createElement('span');
-        translation.className = 'text-body-md text-on-surface';
-        translation.textContent = cue.translation;
-        textEl.append(original, translation);
-        row.append(timeEl, textEl);
-        row.addEventListener('click', () => { audioEl.currentTime = cue.start; });
-        rows.appendChild(row);
+}
+
+// New lines are slotted into place one by one; rows already on screen are left alone.
+// The first line you can see is kept at the same spot on screen, so lines added above
+// it don't push what you're reading down the page
+function insertCues(newCues) {
+    const rows = $('transcript-rows');
+    const anchor = [...rows.children].find(row => row.getBoundingClientRect().bottom > 0);
+    const anchorTop = anchor?.getBoundingClientRect().top;
+
+    newCues.forEach(cue => {
+        cue.id = state.nextCueId++;
+        let at = state.cues.findIndex(existing => existing.start > cue.start);
+        if (at === -1) at = state.cues.length;
+        state.cues.splice(at, 0, cue);
+        rows.insertBefore(createCueRow(cue), rows.children[at] || null);
     });
+
+    if (anchor && anchorTop < window.innerHeight) {
+        const shift = anchor.getBoundingClientRect().top - anchorTop;
+        if (shift) window.scrollBy(0, shift);
+    }
+    $('transcript-empty').classList.toggle('hidden', state.cues.length > 0);
 }
 
 // Checks the playhead every frame while playing, so a line appears the moment it starts

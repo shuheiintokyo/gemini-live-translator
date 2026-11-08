@@ -130,7 +130,7 @@
                     </div>
 
                     <!-- Subtitles, like on TV: the finished line rolls up while the next one grows -->
-                    <div class="rounded-2xl bg-black px-space-md py-space-lg min-h-[11rem] flex flex-col items-center justify-end gap-space-sm text-center">
+                    <div class="rounded-2xl bg-black px-space-md py-space-lg min-h-[16rem] sm:min-h-[18rem] flex flex-col items-center justify-end gap-space-sm text-center">
                         <div id="sub-original-block" class="sub-block flex flex-col gap-0.5">
                             <p id="sub-original-prev" class="sub-prev"></p>
                             <p id="sub-original" class="sub-current"></p>
@@ -140,8 +140,9 @@
                             <p id="sub-translation" class="sub-current"></p>
                         </div>
                     </div>
-                    <p id="sub-status" class="text-label-sm text-on-surface-variant">Press play to start subtitles. They follow the audio a few seconds behind.</p>
-                    <p id="processing-time" class="text-label-sm text-secondary"></p>
+                    <!-- Fixed heights, so changing status text never moves the transcript below -->
+                    <p id="sub-status" class="text-label-sm text-on-surface-variant h-[3.2em] line-clamp-2 overflow-hidden">Press play to start subtitles. They follow the audio a few seconds behind.</p>
+                    <p id="processing-time" class="text-label-sm text-secondary h-[3.2em] line-clamp-2 overflow-hidden"></p>
                 </div>
 
                 <div class="flex flex-col gap-space-sm">
@@ -156,7 +157,7 @@
                     <p id="transcript-empty" class="p-space-lg rounded-xl bg-surface-container-low/60 border border-white/[0.04] text-center font-body-sm text-body-sm text-on-surface-variant">
                         Each sentence appears here with its time in the episode.
                     </p>
-                    <div id="transcript-rows" class="flex flex-col gap-1"></div>
+                    <div id="transcript-rows" class="flex flex-col gap-1 [overflow-anchor:none]"></div>
                 </div>
             </section>
         </div>
