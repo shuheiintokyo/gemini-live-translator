@@ -3,7 +3,7 @@ import { SUPPORTED_LANGUAGES, LIVE_MODELS, getLanguageByCode, getTranslationLang
 import { startElementCapture } from './audio.js';
 import { connectGeminiLive, disconnectGeminiLive, isSessionActive } from './websocket.js';
 import { decodeEpisode } from './episode-audio.js';
-import { FileSubtitlePipeline } from './file-subtitles.js';
+import { AUTO_TRANSLATION, FileSubtitlePipeline, TRANSLATION_MODELS, WHISPER_MODELS } from './file-subtitles.js';
 import { deleteSavedSubtitles, loadSavedSubtitles, saveSubtitles, subtitleCacheKey } from './subtitle-cache.js';
 
 // Live Translate transcribes and translates continuously, which suits long talk
@@ -25,6 +25,10 @@ const state = {
     apiKey: localStorage.getItem('gemini_api_key') || '',
     // Prepared mode transcribes with Groq; like the Gemini key, it's saved on this device only
     groqKey: localStorage.getItem('groq_api_key') || '',
+    whisperModel: WHISPER_MODELS.some(m => m.id === localStorage.getItem('podcast_whisper_model'))
+        ? localStorage.getItem('podcast_whisper_model') : WHISPER_MODELS[0].id,
+    translationModel: TRANSLATION_MODELS.some(m => m.id === localStorage.getItem('podcast_translation_model'))
+        ? localStorage.getItem('podcast_translation_model') : AUTO_TRANSLATION,
     targetLang: getLanguageByCode(localStorage.getItem('gemini_podcast_lang') || localStorage.getItem('gemini_source_lang') || 'EN-US'),
     detectedLang: null,
     episodes: [],
@@ -330,7 +334,8 @@ async function beginPrepared(forget) {
     }
 
     // Anything prepared before for this episode and language is reused, not requested again
-    const cacheKey = subtitleCacheKey(state.episodeFile, state.targetLang, 'whisper');
+    // Lines made with other models are kept separately, so switching never mixes them
+    const cacheKey = subtitleCacheKey(state.episodeFile, state.targetLang, `whisper:${state.whisperModel}:${state.translationModel}`);
     const startedFor = state.episodeFile;
     if (forget) await deleteSavedSubtitles(cacheKey);
     const saved = forget ? null : await loadSavedSubtitles(cacheKey);
@@ -345,6 +350,8 @@ async function beginPrepared(forget) {
     const preparer = new FileSubtitlePipeline({
         groqKey: state.groqKey,
         geminiKey: state.apiKey,
+        whisperModel: state.whisperModel,
+        translationModel: state.translationModel,
         onTiming: (text) => { if (state.preparer === preparer) $('processing-time').textContent = text; },
         loadSamples: getEpisodeSamples,
         targetLang: state.targetLang,
@@ -571,6 +578,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     $('folder-input').addEventListener('change', (e) => loadEpisodes(e.target.files));
     $('file-input').addEventListener('change', (e) => loadEpisodes(e.target.files));
+    const whisperSelect = $('whisper-model-select');
+    WHISPER_MODELS.forEach(model => whisperSelect.add(new Option(model.label, model.id)));
+    whisperSelect.value = state.whisperModel;
+    const translationSelect = $('translation-model-select');
+    translationSelect.add(new Option('Automatic · fastest available', AUTO_TRANSLATION));
+    TRANSLATION_MODELS.forEach(model => translationSelect.add(new Option(model.label, model.id)));
+    translationSelect.value = state.translationModel;
+    // A new choice starts preparation again; lines made earlier with each choice stay saved
+    const onModelChange = () => {
+        state.whisperModel = whisperSelect.value;
+        state.translationModel = translationSelect.value;
+        localStorage.setItem('podcast_whisper_model', state.whisperModel);
+        localStorage.setItem('podcast_translation_model', state.translationModel);
+        if (state.mode === 'prepared' && state.episodeFile) startPrepared();
+    };
+    whisperSelect.addEventListener('change', onModelChange);
+    translationSelect.addEventListener('change', onModelChange);
+
     $('groq-key-input').value = state.groqKey;
     $('gemini-key-input').value = state.apiKey;
     if (!state.groqKey || !state.apiKey) $('api-keys').open = true;
@@ -631,6 +656,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function applyMode() {
     localStorage.setItem('gemini_podcast_mode', state.mode);
+    $('prepared-models').classList.toggle('hidden', state.mode !== 'prepared');
     document.querySelectorAll('.btn-mode-pill').forEach(btn => {
         const isSelected = btn.getAttribute('data-mode') === state.mode;
         btn.setAttribute('aria-checked', String(isSelected));

@@ -4,16 +4,22 @@
 import { SAMPLE_RATE, encodeWav, findQuietCut } from './episode-audio.js';
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/audio/transcriptions';
-// Groq's recommended model for fast multilingual transcription
-const WHISPER_MODEL = 'whisper-large-v3-turbo';
+// Choices shown on the Podcast page. Groq lists v3 with fewer errors (10.3% vs 12%)
+// and turbo as faster and cheaper, and recommends turbo for multilingual use
+export const WHISPER_MODELS = [
+    { id: 'whisper-large-v3-turbo', label: 'Fast · Whisper v3 Turbo' },
+    { id: 'whisper-large-v3', label: 'More accurate · Whisper v3' }
+];
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 // Fast first. Translating text needs little reasoning, so each uses its lowest thinking
 // level; if one is overloaded or out of free quota, the next one is tried
-const TRANSLATION_MODELS = [
-    { id: 'gemini-3.6-flash', thinkingLevel: 'minimal' },
-    { id: 'gemini-3.5-flash-lite', thinkingLevel: 'minimal' },
-    { id: 'gemini-3.8-flash', thinkingLevel: 'low' }
+export const TRANSLATION_MODELS = [
+    { id: 'gemini-3.6-flash', thinkingLevel: 'minimal', label: 'Gemini 3.6 Flash' },
+    { id: 'gemini-3.5-flash-lite', thinkingLevel: 'minimal', label: 'Gemini 3.5 Flash-Lite · fastest' },
+    { id: 'gemini-3.8-flash', thinkingLevel: 'low', label: 'Gemini 3.8 Flash · newest' }
 ];
+// "auto" tries the models above in order; any other value uses only that model
+export const AUTO_TRANSLATION = 'auto';
 const REQUEST_TIMEOUT_MS = 90000;
 
 // About 4 minutes per piece: 16kHz mono WAV is 32 KB a second, so a piece is under 8 MB,
@@ -53,10 +59,10 @@ async function providerMessage(response) {
     }
 }
 
-async function transcribeWithGroq(apiKey, wavBuffer) {
+async function transcribeWithGroq(apiKey, wavBuffer, model) {
     const form = new FormData();
     form.append('file', new Blob([wavBuffer], { type: 'audio/wav' }), 'piece.wav');
-    form.append('model', WHISPER_MODEL);
+    form.append('model', model);
     form.append('response_format', 'verbose_json');
     form.append('timestamp_granularities[]', 'segment');
     form.append('temperature', '0');
@@ -91,9 +97,12 @@ Lines:
 ${JSON.stringify(lines)}`;
 }
 
-async function translateWithGemini(apiKey, lines, targetLanguage, sourceLanguage) {
+async function translateWithGemini(apiKey, lines, targetLanguage, sourceLanguage, modelChoice) {
+    const models = modelChoice === AUTO_TRANSLATION
+        ? TRANSLATION_MODELS
+        : TRANSLATION_MODELS.filter(model => model.id === modelChoice);
     let lastError = null;
-    for (const model of TRANSLATION_MODELS) {
+    for (const model of models) {
         try {
             const response = await fetch(`${GEMINI_API_BASE}/${model.id}:generateContent?key=${encodeURIComponent(apiKey)}`, {
                 method: 'POST',
@@ -126,8 +135,8 @@ async function translateWithGemini(apiKey, lines, targetLanguage, sourceLanguage
 
 export class FileSubtitlePipeline {
     // savedRanges are parts already done earlier (kept on this device), which are skipped
-    constructor({ groqKey, geminiKey, loadSamples, targetLang, getPlayhead, onCues, onLanguage, onStatus, onTiming, onError, savedRanges = [] }) {
-        Object.assign(this, { groqKey, geminiKey, loadSamples, targetLang, getPlayhead, onCues, onLanguage, onStatus, onTiming, onError });
+    constructor({ groqKey, geminiKey, whisperModel, translationModel, loadSamples, targetLang, getPlayhead, onCues, onLanguage, onStatus, onTiming, onError, savedRanges = [] }) {
+        Object.assign(this, { groqKey, geminiKey, whisperModel, translationModel, loadSamples, targetLang, getPlayhead, onCues, onLanguage, onStatus, onTiming, onError });
         this.ranges = savedRanges.map(range => [...range]);
         this.stopped = false;
         this.duration = 0;
@@ -206,10 +215,10 @@ export class FileSubtitlePipeline {
         if (sinceLast < MIN_GAP_BETWEEN_PIECES_MS) await wait(MIN_GAP_BETWEEN_PIECES_MS - sinceLast);
         this.lastPieceStartedAt = performance.now();
 
-        this.onStatus(`Transcribing ${formatDuration(start)}–${formatDuration(end)} with Groq Whisper (${percent}% done)…`);
+        this.onStatus(`Transcribing ${formatDuration(start)}–${formatDuration(end)} with ${this.whisperModel} (${percent}% done)…`);
         const transcribeStarted = performance.now();
         const wav = encodeWav(pieceSamples);
-        const transcript = await this.callWithRetries('Groq', () => transcribeWithGroq(this.groqKey, wav));
+        const transcript = await this.callWithRetries('Groq', () => transcribeWithGroq(this.groqKey, wav, this.whisperModel));
         if (!transcript) return false;
         this.timing.transcribeMs += performance.now() - transcribeStarted;
         if (transcript.language && !this.sourceLanguage) {
@@ -222,7 +231,7 @@ export class FileSubtitlePipeline {
         if (lines.length) {
             this.onStatus(`Translating ${lines.length} lines with Gemini (${percent}% done)…`);
             const translateStarted = performance.now();
-            const translated = await this.callWithRetries('Gemini', () => translateWithGemini(this.geminiKey, lines, this.targetLang.name, this.sourceLanguage));
+            const translated = await this.callWithRetries('Gemini', () => translateWithGemini(this.geminiKey, lines, this.targetLang.name, this.sourceLanguage, this.translationModel));
             if (!translated) return false;
             this.timing.translateMs += performance.now() - translateStarted;
             translations = new Map(translated.map(item => [item.id, item.text]));

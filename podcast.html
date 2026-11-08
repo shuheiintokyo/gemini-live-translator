@@ -58,7 +58,7 @@
                                 <li>Download the episode in the Podcasts app on this Mac.</li>
                                 <li>Click <strong class="text-on-surface">One file</strong>.</li>
                                 <li>In the window's sidebar, under <strong class="text-on-surface">Media</strong>, click <strong class="text-on-surface">Music</strong>, then open <strong class="text-on-surface">Podcasts</strong> and the show.</li>
-                                <li>Choose the episode and click <strong class="text-on-surface">Upload</strong> or <strong class="text-on-surface">Open</strong>. The file stays on your Mac: only the audio goes to Gemini for subtitles.</li>
+                                <li>Choose the episode and click <strong class="text-on-surface">Upload</strong> or <strong class="text-on-surface">Open</strong>. The file stays on your Mac. In Prepared mode the audio goes to Groq to be transcribed and the text to Gemini to be translated; in Live mode the audio goes to Gemini.</li>
                             </ol>
                             <p>Episodes from paid subscriptions may not play.</p>
                             <details class="pt-1">
@@ -111,6 +111,16 @@
                         </div>
                     </div>
                     <p id="mode-hint" class="text-[11px] text-on-surface-variant leading-snug -mt-1"></p>
+                    <div id="prepared-models" class="grid grid-cols-1 sm:grid-cols-2 gap-space-sm">
+                        <label class="flex flex-col gap-1 text-label-sm text-on-surface-variant uppercase">
+                            Transcription
+                            <select id="whisper-model-select" class="bg-surface-container-high text-on-surface p-2 rounded-xl border border-white/[0.08] outline-none text-xs normal-case"></select>
+                        </label>
+                        <label class="flex flex-col gap-1 text-label-sm text-on-surface-variant uppercase">
+                            Translation
+                            <select id="translation-model-select" class="bg-surface-container-high text-on-surface p-2 rounded-xl border border-white/[0.08] outline-none text-xs normal-case"></select>
+                        </label>
+                    </div>
                     <div class="flex flex-wrap items-center justify-between gap-space-sm">
                         <span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Large text</span>
                         <div class="grid grid-cols-2 gap-1 p-1 rounded-xl bg-surface-container-lowest" role="radiogroup" aria-label="Which language is shown large">

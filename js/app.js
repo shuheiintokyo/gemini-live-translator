@@ -464,6 +464,8 @@ const settingApiKey = document.getElementById('setting-api-key');
 
 function openSettings() {
     settingApiKey.value = state.apiKey;
+    // Shared with the Podcast page, which uses it for Prepared subtitles
+    document.getElementById('setting-groq-key').value = localStorage.getItem('groq_api_key') || '';
     document.querySelectorAll('input[name="speak-model"]').forEach(input => { input.checked = input.value === state.speakModel; });
     document.getElementById('settings-key-prompt').classList.add('hidden');
     settingsDialog.showModal();
@@ -484,6 +486,7 @@ function saveSettings() {
 
     state.apiKey = settingApiKey.value.trim();
     localStorage.setItem('gemini_api_key', state.apiKey);
+    localStorage.setItem('groq_api_key', document.getElementById('setting-groq-key').value.trim());
     state.speakModel = document.querySelector('input[name="speak-model"]:checked')?.value || state.speakModel;
     updateLanguageUI();
     settingsDialog.close();

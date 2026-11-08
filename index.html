@@ -194,6 +194,15 @@
                 </button>
             </div>
 
+            <div class="flex flex-col gap-1">
+                <div class="flex items-center justify-between">
+                    <label for="setting-groq-key" class="font-label-sm text-label-sm text-on-surface-variant uppercase">Groq API key · Podcast page</label>
+                    <a class="text-secondary text-[11px] underline" href="https://console.groq.com/keys" target="_blank" rel="noopener">Get one</a>
+                </div>
+                <input id="setting-groq-key" type="password" autocomplete="off" placeholder="Paste your Groq key (optional)" class="w-full bg-surface-container-high text-on-surface p-space-sm rounded-xl border border-white/[0.08] outline-none font-mono text-xs" />
+                <span class="text-[11px] text-on-surface-variant">Only needed for Prepared subtitles on the Podcast page. Stored on this device only.</span>
+            </div>
+
             <fieldset class="flex flex-col gap-space-xs">
                 <legend class="font-label-sm text-label-sm text-on-surface-variant uppercase pb-1">Model for Speak and Talk</legend>
                 <label class="model-option flex items-start gap-space-sm p-space-sm rounded-xl border cursor-pointer">
