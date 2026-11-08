@@ -11,7 +11,9 @@ const SUBTITLE_MODEL = LIVE_MODELS.find(m => m.isTranslateModel);
 const AUDIO_FILE = /\.(mp3|m4a|aac|wav|ogg|opus|flac)$/i;
 const MAX_TAG_BYTES = 8 * 1048576;
 // A prepared line stays up this long after its end time, unless the next one starts
-const CUE_HOLD_SECONDS = 1.2;
+// Whisper's end times are often early, so a line stays up until the next one starts,
+// as long as that's within this long after its end
+const CUE_HOLD_SECONDS = 6;
 // Playback waits until this much is prepared ahead, and pauses again if it gets this close
 const START_BUFFER_SECONDS = 8;
 const STALL_BUFFER_SECONDS = 1.5;
@@ -435,7 +437,8 @@ function setText(element, text) {
 function renderPreparedAt(seconds, force = false) {
     const index = cueIndexAt(seconds);
     const cue = state.cues[index];
-    const isActive = cue && seconds <= cue.end + CUE_HOLD_SECONDS;
+    const next = state.cues[index + 1];
+    const isActive = cue && (seconds <= cue.end + CUE_HOLD_SECONDS || (next && seconds < next.start && seconds <= cue.end + CUE_HOLD_SECONDS * 2));
     const key = isActive ? cue.id : `after-${cue?.id}`;
     if (key === state.shownCue && !force) return;
     state.shownCue = key;
@@ -665,6 +668,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 holdForSubtitles();
             }
         }
+    });
+    // Screen redraws slow down or stop when the window isn't in front, but the player's
+    // time updates keep coming, so they move the subtitles along too
+    audioEl.addEventListener('timeupdate', () => {
+        if (state.mode === 'prepared') renderPreparedAt(audioEl.currentTime);
     });
     audioEl.addEventListener('seeked', () => {
         if (state.mode !== 'prepared') return;

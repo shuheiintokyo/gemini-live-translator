@@ -237,9 +237,12 @@ export class FileSubtitlePipeline {
             translations = new Map(translated.map(item => [item.id, item.text]));
         }
 
+        // Whisper sometimes gives a time just past the end of the piece; keeping each line
+        // inside its piece stops it overlapping the next piece's lines
+        const pieceLength = end - start;
         const cues = transcript.segments.map((segment, id) => ({
-            start: start + Math.max(0, segment.start),
-            end: start + Math.min(end - start, Math.max(segment.end, segment.start + 0.5)),
+            start: start + Math.min(Math.max(0, segment.start), pieceLength - 0.5),
+            end: start + Math.min(pieceLength, Math.max(segment.end, segment.start + 0.5)),
             original: segment.text,
             translation: translations.get(id) || ''
         }));
