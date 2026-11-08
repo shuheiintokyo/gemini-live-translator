@@ -2,7 +2,8 @@
 import { SUPPORTED_LANGUAGES, LIVE_MODELS, getLanguageByCode, getTranslationLanguageCode } from './config.js';
 import { startElementCapture } from './audio.js';
 import { connectGeminiLive, disconnectGeminiLive, isSessionActive } from './websocket.js';
-import { SubtitlePreparer, decodeEpisode } from './prepare.js';
+import { decodeEpisode } from './episode-audio.js';
+import { FileSubtitlePipeline } from './file-subtitles.js';
 import { deleteSavedSubtitles, loadSavedSubtitles, saveSubtitles, subtitleCacheKey } from './subtitle-cache.js';
 
 // Live Translate transcribes and translates continuously, which suits long talk
@@ -22,6 +23,8 @@ const MAX_LINE_LENGTH = { spaced: 84, unspaced: 32 };
 
 const state = {
     apiKey: localStorage.getItem('gemini_api_key') || '',
+    // Prepared mode transcribes with Groq; like the Gemini key, it's saved on this device only
+    groqKey: localStorage.getItem('groq_api_key') || '',
     targetLang: getLanguageByCode(localStorage.getItem('gemini_podcast_lang') || localStorage.getItem('gemini_source_lang') || 'EN-US'),
     detectedLang: null,
     episodes: [],
@@ -252,9 +255,12 @@ function flushSubtitleBuffers() {
     });
 }
 
+// Live Translate reports codes like "ko-KR"; Whisper may report names like "korean"
 function applyDetectedLanguage(code) {
-    const primary = code.toLowerCase().split('-')[0];
-    const match = SUPPORTED_LANGUAGES.find(lang => getTranslationLanguageCode(lang).split('-')[0].toLowerCase() === primary);
+    const lower = code.toLowerCase();
+    const primary = lower.split('-')[0];
+    const match = SUPPORTED_LANGUAGES.find(lang => getTranslationLanguageCode(lang).split('-')[0].toLowerCase() === primary)
+        || (lower.length > 3 && SUPPORTED_LANGUAGES.find(lang => lang.name.toLowerCase().startsWith(lower)));
     const name = match ? match.name : code;
     if (state.detectedLang === name) return;
     state.detectedLang = name;
@@ -317,13 +323,14 @@ async function startPrepared({ forget = false } = {}) {
 async function beginPrepared(forget) {
     clearTranscript();
     if (!state.episodeFile) return;
-    if (!state.apiKey) {
-        setStatus('Add your Gemini API key on the Live page first: open Settings there, then come back.');
+    if (!state.groqKey || !state.apiKey) {
+        setStatus(`Add your ${!state.groqKey && !state.apiKey ? 'Groq and Gemini keys' : !state.groqKey ? 'Groq key' : 'Gemini key'} under "API keys" on the left to prepare subtitles.`);
+        $('api-keys').open = true;
         return;
     }
 
     // Anything prepared before for this episode and language is reused, not requested again
-    const cacheKey = subtitleCacheKey(state.episodeFile, state.targetLang);
+    const cacheKey = subtitleCacheKey(state.episodeFile, state.targetLang, 'whisper');
     const startedFor = state.episodeFile;
     if (forget) await deleteSavedSubtitles(cacheKey);
     const saved = forget ? null : await loadSavedSubtitles(cacheKey);
@@ -334,8 +341,11 @@ async function beginPrepared(forget) {
         renderPreparedAt(audioEl.currentTime, true);
     }
 
-    const preparer = new SubtitlePreparer({
-        apiKey: state.apiKey,
+    $('processing-time').textContent = '';
+    const preparer = new FileSubtitlePipeline({
+        groqKey: state.groqKey,
+        geminiKey: state.apiKey,
+        onTiming: (text) => { if (state.preparer === preparer) $('processing-time').textContent = text; },
         loadSamples: getEpisodeSamples,
         targetLang: state.targetLang,
         savedRanges: saved?.ranges || [],
@@ -561,6 +571,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     $('folder-input').addEventListener('change', (e) => loadEpisodes(e.target.files));
     $('file-input').addEventListener('change', (e) => loadEpisodes(e.target.files));
+    $('groq-key-input').value = state.groqKey;
+    $('gemini-key-input').value = state.apiKey;
+    if (!state.groqKey || !state.apiKey) $('api-keys').open = true;
+    $('save-keys-btn').addEventListener('click', () => {
+        state.groqKey = $('groq-key-input').value.trim();
+        state.apiKey = $('gemini-key-input').value.trim();
+        localStorage.setItem('groq_api_key', state.groqKey);
+        localStorage.setItem('gemini_api_key', state.apiKey);
+        if (state.groqKey && state.apiKey) $('api-keys').open = false;
+        showToast("Keys saved on this device", "success", "key");
+        if (state.mode === 'prepared' && state.episodeFile) startPrepared();
+    });
+
     $('copy-path-btn').addEventListener('click', () => {
         navigator.clipboard.writeText($('podcasts-path').textContent).then(() => showToast("Path copied", "success", "content_copy"));
     });
@@ -616,8 +639,8 @@ function applyMode() {
             : 'text-on-surface-variant hover:text-on-surface'}`;
     });
     $('mode-hint').textContent = state.mode === 'prepared'
-        ? 'Prepared: reads ahead and times each line, so subtitles appear as words are spoken. The first lines take a few seconds.'
-        : 'Live: follows the audio as it plays, a few seconds behind. Use it if Prepared mode has trouble with a file.';
+        ? 'Prepared: Groq Whisper transcribes the file with timestamps, then Gemini translates each line. Much faster than real time, and each line appears as it is spoken.'
+        : 'Live (the old method): streams the audio to the Gemini Live API as it plays, a few seconds behind. Uses your own key from the Live page.';
 }
 
 function selectMode(mode) {

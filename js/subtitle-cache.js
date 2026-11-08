@@ -22,9 +22,10 @@ async function withStore(mode, action) {
     });
 }
 
-// The same file chosen again has the same name, size and date
-export function subtitleCacheKey(file, targetLang) {
-    return [file.name, file.size, file.lastModified, targetLang.code].join('|');
+// The same file chosen again has the same name, size and date. The method is part of the
+// key, so lines made one way are never mixed with lines made another way
+export function subtitleCacheKey(file, targetLang, method) {
+    return [method, file.name, file.size, file.lastModified, targetLang.code].join('|');
 }
 
 // Saving is a convenience: if storage is blocked or full, subtitles still work, just unsaved

@@ -71,6 +71,18 @@
                             </details>
                         </div>
                     </details>
+                    <details id="api-keys" class="rounded-xl bg-surface-container-high/60 border border-white/[0.06]">
+                        <summary class="p-space-sm cursor-pointer font-label-sm text-label-sm text-on-surface-variant uppercase">API keys</summary>
+                        <div class="px-space-sm pb-space-sm flex flex-col gap-space-xs text-body-sm text-on-surface-variant leading-snug">
+                            <p>Prepared subtitles use Groq to transcribe and Gemini to translate. The keys are saved on this device only and sent only to Groq and Google.</p>
+                            <label for="groq-key-input" class="text-label-sm uppercase">Groq API key · <a class="underline text-secondary" href="https://console.groq.com/keys" target="_blank" rel="noopener">get one</a></label>
+                            <input id="groq-key-input" type="password" autocomplete="off" placeholder="Paste your Groq key" class="bg-surface-container-high text-on-surface p-2 rounded-lg border border-white/[0.08] outline-none text-xs" />
+                            <label for="gemini-key-input" class="text-label-sm uppercase">Gemini API key · <a class="underline text-secondary" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">get one</a></label>
+                            <input id="gemini-key-input" type="password" autocomplete="off" placeholder="Paste your Gemini key" class="bg-surface-container-high text-on-surface p-2 rounded-lg border border-white/[0.08] outline-none text-xs" />
+                            <p class="text-[11px]">The Gemini key is the same one the Live page uses, so saving it here updates it there too. Keep both keys private.</p>
+                            <button id="save-keys-btn" class="self-start px-3 py-2 rounded-lg bg-primary-container text-on-primary-container font-bold text-label-sm cursor-pointer" type="button">Save keys</button>
+                        </div>
+                    </details>
                     <p id="episode-empty" class="text-body-sm text-on-surface-variant">No episodes loaded yet.</p>
                     <div id="episode-list" class="flex flex-col gap-space-xs max-h-[50vh] overflow-y-auto"></div>
                 </div>
@@ -119,6 +131,7 @@
                         </div>
                     </div>
                     <p id="sub-status" class="text-label-sm text-on-surface-variant">Press play to start subtitles. They follow the audio a few seconds behind.</p>
+                    <p id="processing-time" class="text-label-sm text-secondary"></p>
                 </div>
 
                 <div class="flex flex-col gap-space-sm">
